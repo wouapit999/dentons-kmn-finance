@@ -1,0 +1,205 @@
+// Dentons KMN Finance — data model (Auth/RBAC/Users module + org scaffolding).
+//
+// Dev uses SQLite for zero-config local runs. For production, switch the
+// datasource provider to "postgresql" and point DATABASE_URL at Postgres.
+// Statuses are stored as strings (portable across SQLite/Postgres) and are
+// constrained in the application layer (see src/lib/constants.ts).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Company {
+  id           String   @id @default(uuid())
+  legalName    String
+  baseCurrency String   @default("XAF")
+  countryCode  String   @default("CM")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  offices     Office[]
+  departments Department[]
+  users       User[]
+  roles       Role[]
+  auditLogs   AuditLog[]
+}
+
+model Office {
+  id          String   @id @default(uuid())
+  companyId   String
+  name        String
+  countryCode String   @default("CM")
+  currency    String   @default("XAF")
+  timezone    String   @default("Africa/Douala")
+  createdAt   DateTime @default(now())
+
+  company   Company    @relation(fields: [companyId], references: [id])
+  userRoles UserRole[]
+
+  @@index([companyId])
+}
+
+model Department {
+  id        String   @id @default(uuid())
+  companyId String
+  name      String
+  createdAt DateTime @default(now())
+
+  company Company @relation(fields: [companyId], references: [id])
+  users   User[]
+
+  @@index([companyId])
+}
+
+model User {
+  id            String    @id @default(uuid())
+  companyId     String
+  departmentId  String?
+  email         String
+  phone         String?
+  fullName      String
+  status        String    @default("ACTIVE") // INVITED | ACTIVE | DISABLED
+  locale        String    @default("en") // en | fr
+  currency      String    @default("XAF")
+  passwordHash  String
+  mfaEnabled    Boolean   @default(false)
+  mfaSecretEnc  String?
+  lastLoginAt   DateTime?
+  failedLogins  Int       @default(0)
+  lockedUntil   DateTime?
+  version       Int       @default(1)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  deletedAt     DateTime?
+
+  company        Company         @relation(fields: [companyId], references: [id])
+  department     Department?     @relation(fields: [departmentId], references: [id])
+  userRoles      UserRole[]
+  approvalLimits ApprovalLimit[]
+  sessions       Session[]
+  loginAttempts  LoginAttempt[]
+  auditLogs      AuditLog[]
+
+  @@unique([companyId, email])
+  @@index([companyId])
+}
+
+model Role {
+  id             String   @id @default(uuid())
+  companyId      String
+  key            String
+  name           String
+  description    String?
+  isSystem       Boolean  @default(false)
+  hierarchyLevel Int      @default(100)
+  createdAt      DateTime @default(now())
+
+  company         Company          @relation(fields: [companyId], references: [id])
+  rolePermissions RolePermission[]
+  userRoles       UserRole[]
+
+  @@unique([companyId, key])
+  @@index([companyId])
+}
+
+model Permission {
+  id          String   @id @default(uuid())
+  key         String   @unique // resource:action, e.g. "invoice:approve"
+  resource    String
+  action      String
+  description String?
+
+  rolePermissions RolePermission[]
+}
+
+model RolePermission {
+  roleId       String
+  permissionId String
+
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+}
+
+model UserRole {
+  userId   String
+  roleId   String
+  officeId String?
+
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role   Role    @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  office Office? @relation(fields: [officeId], references: [id])
+
+  @@id([userId, roleId])
+  @@index([userId])
+  @@index([roleId])
+}
+
+model ApprovalLimit {
+  id        String   @id @default(uuid())
+  userId    String
+  resource  String
+  currency  String   @default("XAF")
+  maxAmount Decimal
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Session {
+  id        String    @id @default(uuid())
+  userId    String
+  tokenId   String    @unique // jti of the issued JWT
+  ip        String?
+  userAgent String?
+  createdAt DateTime  @default(now())
+  expiresAt DateTime
+  revokedAt DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model LoginAttempt {
+  id        String   @id @default(uuid())
+  userId    String?
+  email     String
+  ip        String?
+  success   Boolean
+  reason    String?
+  createdAt DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id])
+
+  @@index([email])
+}
+
+// Append-only audit log. The application never updates or deletes these rows.
+model AuditLog {
+  id         String   @id @default(uuid())
+  companyId  String
+  actorId    String?
+  action     String
+  entityType String
+  entityId   String?
+  before     String? // JSON string
+  after      String? // JSON string
+  ip         String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  company Company @relation(fields: [companyId], references: [id])
+  actor   User?   @relation(fields: [actorId], references: [id])
+
+  @@index([companyId])
+  @@index([entityType, entityId])
+}
