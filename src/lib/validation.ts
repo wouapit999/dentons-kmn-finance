@@ -37,3 +37,48 @@ export const resetPasswordSchema = z.object({
 export const changeLanguageSchema = z.object({
   locale: z.enum(LOCALES),
 });
+
+// --- General Ledger ---
+
+export const createAccountSchema = z.object({
+  code: z.string().min(3).max(20),
+  name: z.string().min(2).max(160),
+  type: z.enum(["ASSET", "LIABILITY", "EQUITY", "REVENUE", "EXPENSE"]),
+  syscohadaClass: z.string().max(2).optional().or(z.literal("")),
+  ifrsCategory: z.string().max(80).optional().or(z.literal("")),
+  isPostable: z.boolean().default(true),
+});
+export type CreateAccountInput = z.infer<typeof createAccountSchema>;
+
+const journalLineSchema = z
+  .object({
+    accountId: z.string().uuid(),
+    debit: z.number().nonnegative().default(0),
+    credit: z.number().nonnegative().default(0),
+    description: z.string().max(200).optional(),
+  })
+  .refine((l) => !(l.debit > 0 && l.credit > 0), {
+    message: "A line cannot have both a debit and a credit",
+  })
+  .refine((l) => l.debit > 0 || l.credit > 0, {
+    message: "A line must have a debit or a credit",
+  });
+
+export const createEntrySchema = z
+  .object({
+    journalId: z.string().uuid(),
+    periodId: z.string().uuid(),
+    entryDate: z.string(), // ISO date
+    description: z.string().max(300).optional(),
+    currency: z.string().length(3).default("XAF"),
+    lines: z.array(journalLineSchema).min(2, "An entry needs at least two lines"),
+  })
+  .refine(
+    (e) => {
+      const debit = e.lines.reduce((s, l) => s + l.debit, 0);
+      const credit = e.lines.reduce((s, l) => s + l.credit, 0);
+      return Math.abs(debit - credit) < 0.0001 && debit > 0;
+    },
+    { message: "Entry is not balanced (total debits must equal total credits)" },
+  );
+export type CreateEntryInput = z.infer<typeof createEntrySchema>;

@@ -7,6 +7,9 @@ import {
   Users,
   ShieldCheck,
   ScrollText,
+  BookOpen,
+  PenLine,
+  Scale,
   LogOut,
   Moon,
   Sun,
@@ -36,6 +39,9 @@ export function Shell({ children, user }: ShellProps) {
 
   const nav: { href: string; label: MessageKey; icon: React.ReactNode; perm?: string }[] = [
     { href: "/dashboard", label: "nav.dashboard", icon: <LayoutDashboard size={18} /> },
+    { href: "/gl/accounts", label: "nav.accounts", icon: <BookOpen size={18} />, perm: "gl:read" },
+    { href: "/gl/journal", label: "nav.journal", icon: <PenLine size={18} />, perm: "gl:read" },
+    { href: "/gl/trial-balance", label: "nav.trialBalance", icon: <Scale size={18} />, perm: "gl:read" },
     { href: "/users", label: "nav.users", icon: <Users size={18} />, perm: "user:read" },
     { href: "/roles", label: "nav.roles", icon: <ShieldCheck size={18} />, perm: "role:read" },
     { href: "/audit", label: "nav.audit", icon: <ScrollText size={18} />, perm: "audit:read" },

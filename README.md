@@ -6,17 +6,22 @@ Built with **Next.js 14 (App Router) · TypeScript · TailwindCSS · Prisma · R
 
 ## Status
 
-**Module 1 — Auth / RBAC / Users — is live and working.** The remaining finance modules
-follow the roadmap in [`docs/04-roadmap.md`](docs/04-roadmap.md). This is a real,
-compiling, deployable foundation — not a mockup.
+**Modules 1 & 2 are live and working** — a real, compiling, deployable system, not a mockup.
+Remaining modules follow the roadmap in [`docs/04-roadmap.md`](docs/04-roadmap.md).
 
-What works today:
+**Module 1 — Auth / RBAC / Users**
 - Email/password login with server sessions (JWT in an httpOnly, `Secure`, `SameSite` cookie), failed-login lockout, logout.
 - **RBAC**: 13 seeded system roles, a permission registry (`resource:action`), server-enforced permission guards on every route.
 - **IT-Admin user management**: create / activate / deactivate users, assign roles, reset passwords (all audited).
-- **Immutable audit log** of material actions (login, user create/update/deactivate, password reset).
+- **Immutable audit log** of material actions.
 - **Bilingual EN/FR** UI with live language switching (no re-login), dark/light mode, responsive role-aware navigation.
-- Executive dashboard with KPIs; Users, Roles & Permissions, and Audit Log screens.
+
+**Module 2 — General Ledger**
+- **Chart of Accounts**: SYSCOHADA/OHADA-based (Cameroon), IFRS-reportable, 31 seeded accounts; create accounts (`gl:manage`).
+- **Journal entries**: double-entry posting enforced **balanced** (debits = credits), against **open periods** and **postable accounts** only, in a DB transaction with sequential entry numbers.
+- **Immutable posted entries** + audit trail; **Trial Balance** report that ties out.
+- 6 journals, a fiscal year with 12 monthly periods seeded.
+- Verified: balanced entry posts ✓, unbalanced rejected (422) ✓, non-`gl:post` role denied (403) ✓.
 
 ## Run locally
 
@@ -52,10 +57,10 @@ npm run dev                  # http://localhost:3000
 The app builds to a **standalone** server (`next.config.mjs` → `output: "standalone"`).
 
 ### Option A — Vercel (fastest)
-1. Push this repo to GitHub (see below).
-2. Import it in Vercel.
-3. Set env vars: `DATABASE_URL` (a **PostgreSQL** URL — e.g. Vercel Postgres / Neon / Supabase) and `AUTH_SECRET`.
-4. Switch the Prisma datasource provider to `postgresql` in `prisma/schema.prisma`, then run `prisma migrate deploy` (or `db push`) and the seed once against the production DB.
+See the step-by-step guide: **[docs/DEPLOY-VERCEL.md](docs/DEPLOY-VERCEL.md)**.
+In short: provision Postgres (Vercel Postgres / Neon / Supabase), import the repo, set
+`DB_PROVIDER=postgresql`, `DATABASE_URL`, and `AUTH_SECRET`. The repo's `vercel-build`
+script handles the provider switch, schema push, and seed automatically.
 
 ### Option B — Docker (any host)
 ```bash

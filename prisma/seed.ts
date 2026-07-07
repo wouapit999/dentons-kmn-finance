@@ -1,6 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { PERMISSIONS, SYSTEM_ROLES } from "../src/lib/constants";
+import { CHART_OF_ACCOUNTS, JOURNALS } from "../src/lib/coa";
 
 const prisma = new PrismaClient();
 
@@ -115,6 +116,70 @@ async function main() {
   await prisma.userRole.create({
     data: { userId: cfo.id, roleId: roleByKey["CFO"], officeId: office.id },
   });
+
+  // 6) General Ledger — fiscal year, monthly periods, journals, chart of accounts
+  const year = new Date().getFullYear();
+  const fy = await prisma.fiscalYear.upsert({
+    where: { id: "00000000-0000-0000-0000-0000000000f0" },
+    update: {},
+    create: {
+      id: "00000000-0000-0000-0000-0000000000f0",
+      companyId: company.id,
+      name: `FY${year}`,
+      startDate: new Date(Date.UTC(year, 0, 1)),
+      endDate: new Date(Date.UTC(year, 11, 31)),
+      status: "OPEN",
+    },
+  });
+
+  const months = [
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December",
+  ];
+  for (let m = 0; m < 12; m++) {
+    const id = `00000000-0000-0000-0000-0000000000${(m + 16).toString(16).padStart(2, "0")}`;
+    await prisma.accountingPeriod.upsert({
+      where: { id },
+      update: {},
+      create: {
+        id,
+        companyId: company.id,
+        fiscalYearId: fy.id,
+        seq: m + 1,
+        name: `${months[m]} ${year}`,
+        startDate: new Date(Date.UTC(year, m, 1)),
+        endDate: new Date(Date.UTC(year, m + 1, 0)),
+        status: "OPEN",
+      },
+    });
+  }
+
+  for (const j of JOURNALS) {
+    await prisma.journal.upsert({
+      where: { companyId_code: { companyId: company.id, code: j.code } },
+      update: { name: j.name, type: j.type },
+      create: { companyId: company.id, code: j.code, name: j.name, type: j.type },
+    });
+  }
+
+  for (const a of CHART_OF_ACCOUNTS) {
+    await prisma.account.upsert({
+      where: { companyId_code: { companyId: company.id, code: a.code } },
+      update: { name: a.name, type: a.type },
+      create: {
+        companyId: company.id,
+        code: a.code,
+        name: a.name,
+        type: a.type,
+        syscohadaClass: a.syscohadaClass,
+        ifrsCategory: a.ifrsCategory,
+        isPostable: a.isPostable ?? true,
+      },
+    });
+  }
+  console.log(
+    `GL seeded: ${CHART_OF_ACCOUNTS.length} accounts, ${JOURNALS.length} journals, 12 periods.`,
+  );
 
   console.log("\nSeed complete. Sign in with:");
   console.log("  IT Admin : admin@dentonskmn.local / ChangeMe123!");

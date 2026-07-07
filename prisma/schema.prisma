@@ -6,7 +6,9 @@
 // constrained in the application layer (see src/lib/constants.ts).
 
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  // "native" for local dev; the rhel target is what Vercel's runtime needs.
+  binaryTargets = ["native", "rhel-openssl-3.0.x"]
 }
 
 datasource db {
@@ -27,6 +29,12 @@ model Company {
   users       User[]
   roles       Role[]
   auditLogs   AuditLog[]
+
+  accounts     Account[]
+  journals     Journal[]
+  fiscalYears  FiscalYear[]
+  periods      AccountingPeriod[]
+  entries      JournalEntry[]
 }
 
 model Office {
@@ -202,4 +210,124 @@ model AuditLog {
 
   @@index([companyId])
   @@index([entityType, entityId])
+}
+
+// ---------------------------------------------------------------------------
+// General Ledger (Module 2)
+// ---------------------------------------------------------------------------
+
+// Chart of Accounts (tree). SYSCOHADA-aware for Cameroon (OHADA) while also
+// carrying an IFRS category for IFRS reporting.
+model Account {
+  id             String   @id @default(uuid())
+  companyId      String
+  code           String
+  name           String
+  type           String // ASSET | LIABILITY | EQUITY | REVENUE | EXPENSE
+  syscohadaClass String? // OHADA class, e.g. "1".."8"
+  ifrsCategory   String?
+  currency       String?
+  isPostable     Boolean  @default(true)
+  parentId       String?
+  status         String   @default("ACTIVE") // ACTIVE | ARCHIVED
+  createdAt      DateTime @default(now())
+
+  company  Company       @relation(fields: [companyId], references: [id])
+  parent   Account?      @relation("AccountTree", fields: [parentId], references: [id])
+  children Account[]     @relation("AccountTree")
+  lines    JournalLine[]
+
+  @@unique([companyId, code])
+  @@index([companyId])
+}
+
+model Journal {
+  id        String   @id @default(uuid())
+  companyId String
+  code      String
+  name      String
+  type      String // SALES | PURCHASES | BANK | CASH | GENERAL | PAYROLL | TRUST
+  createdAt DateTime @default(now())
+
+  company Company        @relation(fields: [companyId], references: [id])
+  entries JournalEntry[]
+
+  @@unique([companyId, code])
+  @@index([companyId])
+}
+
+model FiscalYear {
+  id        String   @id @default(uuid())
+  companyId String
+  name      String
+  startDate DateTime
+  endDate   DateTime
+  status    String   @default("OPEN") // OPEN | CLOSED
+  createdAt DateTime @default(now())
+
+  company Company            @relation(fields: [companyId], references: [id])
+  periods AccountingPeriod[]
+
+  @@index([companyId])
+}
+
+model AccountingPeriod {
+  id           String   @id @default(uuid())
+  companyId    String
+  fiscalYearId String
+  seq          Int
+  name         String
+  startDate    DateTime
+  endDate      DateTime
+  status       String   @default("OPEN") // OPEN | CLOSED
+  closedAt     DateTime?
+
+  company    Company        @relation(fields: [companyId], references: [id])
+  fiscalYear FiscalYear     @relation(fields: [fiscalYearId], references: [id])
+  entries    JournalEntry[]
+
+  @@index([companyId])
+  @@index([fiscalYearId])
+}
+
+// A posted journal entry is immutable. Corrections are new reversing entries.
+model JournalEntry {
+  id          String    @id @default(uuid())
+  companyId   String
+  journalId   String
+  periodId    String
+  entryNo     String
+  entryDate   DateTime
+  description String?
+  currency    String    @default("XAF")
+  status      String    @default("POSTED") // DRAFT | POSTED | REVERSED
+  postedAt    DateTime?
+  createdById String?
+  reversalOf  String?
+  createdAt   DateTime  @default(now())
+
+  company Company          @relation(fields: [companyId], references: [id])
+  journal Journal          @relation(fields: [journalId], references: [id])
+  period  AccountingPeriod @relation(fields: [periodId], references: [id])
+  lines   JournalLine[]
+
+  @@unique([companyId, entryNo])
+  @@index([companyId])
+  @@index([periodId])
+  @@index([journalId])
+}
+
+model JournalLine {
+  id          String  @id @default(uuid())
+  entryId     String
+  accountId   String
+  debit       Decimal @default(0)
+  credit      Decimal @default(0)
+  description String?
+
+  entry   JournalEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  account Account      @relation(fields: [accountId], references: [id])
+
+  @@index([entryId])
+  @@index([accountId])
 }

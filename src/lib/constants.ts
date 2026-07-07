@@ -18,9 +18,10 @@ export const PERMISSIONS = {
   "role:manage": "Create/edit roles and assign permissions",
   "audit:read": "View the audit log",
 
-  // General Ledger (future modules — defined so roles can be seeded)
+  // General Ledger
   "gl:read": "View the general ledger",
   "gl:post": "Post journal entries",
+  "gl:manage": "Manage the chart of accounts and periods",
 
   // Billing / AR
   "invoice:read": "View invoices",
@@ -74,7 +75,7 @@ export const SYSTEM_ROLES: {
     name: "Chief Finance Officer",
     hierarchyLevel: 20,
     permissions: [
-      "user:read", "audit:read", "gl:read", "gl:post", "invoice:read",
+      "user:read", "audit:read", "gl:read", "gl:post", "gl:manage", "invoice:read",
       "invoice:approve", "payment:read", "payment:approve", "trust:read",
       "trust:manage", "payroll:read", "payroll:post", "report:read", "report:export",
     ],
@@ -84,7 +85,7 @@ export const SYSTEM_ROLES: {
     name: "Finance Manager",
     hierarchyLevel: 30,
     permissions: [
-      "gl:read", "gl:post", "invoice:read", "invoice:create", "invoice:approve",
+      "gl:read", "gl:post", "gl:manage", "invoice:read", "invoice:create", "invoice:approve",
       "payment:read", "payment:create", "payment:approve", "trust:read",
       "report:read", "report:export",
     ],

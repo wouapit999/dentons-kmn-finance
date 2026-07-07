@@ -7,7 +7,6 @@ import type { Locale } from "@/lib/constants";
 export const dynamic = "force-dynamic";
 
 const PLANNED_MODULES = [
-  "General Ledger",
   "Client & Matter Management",
   "Billing & Accounts Receivable",
   "Trust Accounting",
@@ -26,17 +25,17 @@ export default async function DashboardPage() {
   const companyId = user!.companyId;
 
   const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
-  const [activeUsers, roles, logins24h, auditCount] = await Promise.all([
+  const [activeUsers, roles, entries, auditCount] = await Promise.all([
     prisma.user.count({ where: { companyId, status: "ACTIVE", deletedAt: null } }),
     prisma.role.count({ where: { companyId } }),
-    prisma.loginAttempt.count({ where: { success: true, createdAt: { gte: since } } }),
+    prisma.journalEntry.count({ where: { companyId, status: "POSTED" } }),
     prisma.auditLog.count({ where: { companyId } }),
   ]);
 
   const kpis = [
     { label: t(locale, "dashboard.kpi.users"), value: activeUsers },
     { label: t(locale, "dashboard.kpi.roles"), value: roles },
-    { label: t(locale, "dashboard.kpi.logins"), value: logins24h },
+    { label: t(locale, "dashboard.kpi.entries"), value: entries },
     { label: t(locale, "dashboard.kpi.audit"), value: auditCount },
   ];
 
