@@ -35,6 +35,11 @@ model Company {
   fiscalYears  FiscalYear[]
   periods      AccountingPeriod[]
   entries      JournalEntry[]
+
+  practiceAreas  PracticeArea[]
+  clients        Client[]
+  matters        Matter[]
+  conflictChecks ConflictCheck[]
 }
 
 model Office {
@@ -92,6 +97,7 @@ model User {
   sessions       Session[]
   loginAttempts  LoginAttempt[]
   auditLogs      AuditLog[]
+  mattersLed     Matter[]        @relation("MatterPartner")
 
   @@unique([companyId, email])
   @@index([companyId])
@@ -330,4 +336,85 @@ model JournalLine {
 
   @@index([entryId])
   @@index([accountId])
+}
+
+// ---------------------------------------------------------------------------
+// Client & Matter Management (Module 3)
+// ---------------------------------------------------------------------------
+
+model PracticeArea {
+  id        String   @id @default(uuid())
+  companyId String
+  name      String
+  createdAt DateTime @default(now())
+
+  company Company  @relation(fields: [companyId], references: [id])
+  matters Matter[]
+
+  @@unique([companyId, name])
+  @@index([companyId])
+}
+
+model Client {
+  id             String    @id @default(uuid())
+  companyId      String
+  type           String // CORPORATE | INDIVIDUAL
+  name           String
+  email          String?
+  phone          String?
+  taxId          String?
+  kycStatus      String    @default("PENDING") // PENDING | VERIFIED | REJECTED
+  amlRisk        String    @default("LOW") // LOW | MEDIUM | HIGH
+  conflictStatus String    @default("NOT_RUN") // NOT_RUN | CLEAR | POTENTIAL | BLOCKED
+  status         String    @default("ACTIVE") // ACTIVE | INACTIVE
+  createdById    String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  deletedAt      DateTime?
+
+  company        Company         @relation(fields: [companyId], references: [id])
+  matters        Matter[]
+  conflictChecks ConflictCheck[]
+
+  @@index([companyId])
+}
+
+model Matter {
+  id                  String   @id @default(uuid())
+  companyId           String
+  clientId            String
+  code                String
+  name                String
+  practiceAreaId      String?
+  responsiblePartnerId String?
+  status              String   @default("OPEN") // OPEN | ON_HOLD | CLOSED
+  currency            String   @default("XAF")
+  openedAt            DateTime @default(now())
+  createdById         String?
+  createdAt           DateTime @default(now())
+
+  company           Company       @relation(fields: [companyId], references: [id])
+  client            Client        @relation(fields: [clientId], references: [id])
+  practiceArea      PracticeArea? @relation(fields: [practiceAreaId], references: [id])
+  responsiblePartner User?        @relation("MatterPartner", fields: [responsiblePartnerId], references: [id])
+
+  @@unique([companyId, code])
+  @@index([companyId])
+  @@index([clientId])
+}
+
+model ConflictCheck {
+  id          String   @id @default(uuid())
+  companyId   String
+  clientId    String
+  status      String // CLEAR | POTENTIAL | BLOCKED
+  matches     String? // JSON list of matched names
+  notes       String?
+  checkedById String?
+  createdAt   DateTime @default(now())
+
+  company Company @relation(fields: [companyId], references: [id])
+  client  Client  @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([clientId])
 }

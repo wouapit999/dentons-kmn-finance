@@ -181,6 +181,74 @@ async function main() {
     `GL seeded: ${CHART_OF_ACCOUNTS.length} accounts, ${JOURNALS.length} journals, 12 periods.`,
   );
 
+  // 7) Practice areas, sample clients & a matter (Module 3)
+  const areaNames = [
+    "Corporate & Commercial",
+    "Litigation & Arbitration",
+    "Tax",
+    "Intellectual Property",
+    "Real Estate",
+    "Employment",
+  ];
+  const areaId: Record<string, string> = {};
+  for (const name of areaNames) {
+    const pa = await prisma.practiceArea.upsert({
+      where: { companyId_name: { companyId: company.id, name } },
+      update: {},
+      create: { companyId: company.id, name },
+    });
+    areaId[name] = pa.id;
+  }
+
+  const acme = await prisma.client.upsert({
+    where: { id: "00000000-0000-0000-0000-0000000000c1" },
+    update: {},
+    create: {
+      id: "00000000-0000-0000-0000-0000000000c1",
+      companyId: company.id,
+      type: "CORPORATE",
+      name: "Acme Cameroun SA",
+      email: "legal@acme.cm",
+      taxId: "M071234567890P",
+      kycStatus: "VERIFIED",
+      amlRisk: "LOW",
+      conflictStatus: "CLEAR",
+      createdById: admin.id,
+    },
+  });
+
+  await prisma.client.upsert({
+    where: { id: "00000000-0000-0000-0000-0000000000c2" },
+    update: {},
+    create: {
+      id: "00000000-0000-0000-0000-0000000000c2",
+      companyId: company.id,
+      type: "INDIVIDUAL",
+      name: "Jean-Paul Mballa",
+      email: "jp.mballa@example.cm",
+      kycStatus: "PENDING",
+      amlRisk: "MEDIUM",
+      createdById: admin.id,
+    },
+  });
+
+  await prisma.matter.upsert({
+    where: { companyId_code: { companyId: company.id, code: "M-2026-001" } },
+    update: {},
+    create: {
+      companyId: company.id,
+      clientId: acme.id,
+      code: "M-2026-001",
+      name: "Acme — Series B financing",
+      practiceAreaId: areaId["Corporate & Commercial"],
+      responsiblePartnerId: cfo.id,
+      status: "OPEN",
+      currency: "XAF",
+      createdById: admin.id,
+    },
+  });
+  console.log(`Clients/Matters seeded: 2 clients, 1 matter, ${areaNames.length} practice areas.`);
+
   console.log("\nSeed complete. Sign in with:");
   console.log("  IT Admin : admin@dentonskmn.local / ChangeMe123!");
   console.log("  CFO      : cfo@dentonskmn.local   / ChangeMe123!");

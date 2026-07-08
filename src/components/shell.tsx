@@ -10,6 +10,8 @@ import {
   BookOpen,
   PenLine,
   Scale,
+  Briefcase,
+  FolderKanban,
   LogOut,
   Moon,
   Sun,
@@ -39,6 +41,8 @@ export function Shell({ children, user }: ShellProps) {
 
   const nav: { href: string; label: MessageKey; icon: React.ReactNode; perm?: string }[] = [
     { href: "/dashboard", label: "nav.dashboard", icon: <LayoutDashboard size={18} /> },
+    { href: "/clients", label: "nav.clients", icon: <Briefcase size={18} />, perm: "client:read" },
+    { href: "/matters", label: "nav.matters", icon: <FolderKanban size={18} />, perm: "matter:read" },
     { href: "/gl/accounts", label: "nav.accounts", icon: <BookOpen size={18} />, perm: "gl:read" },
     { href: "/gl/journal", label: "nav.journal", icon: <PenLine size={18} />, perm: "gl:read" },
     { href: "/gl/trial-balance", label: "nav.trialBalance", icon: <Scale size={18} />, perm: "gl:read" },

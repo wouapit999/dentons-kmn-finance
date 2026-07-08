@@ -23,6 +23,12 @@ export const PERMISSIONS = {
   "gl:post": "Post journal entries",
   "gl:manage": "Manage the chart of accounts and periods",
 
+  // Client & Matter Management
+  "client:read": "View clients",
+  "client:manage": "Create/edit clients, run KYC & conflict checks",
+  "matter:read": "View matters",
+  "matter:manage": "Open and manage matters",
+
   // Billing / AR
   "invoice:read": "View invoices",
   "invoice:create": "Create invoices",
@@ -65,7 +71,8 @@ export const SYSTEM_ROLES: {
     name: "Managing Partner",
     hierarchyLevel: 10,
     permissions: [
-      "user:read", "role:read", "audit:read", "gl:read", "invoice:read",
+      "user:read", "role:read", "audit:read", "gl:read", "client:read",
+      "client:manage", "matter:read", "matter:manage", "invoice:read",
       "invoice:approve", "payment:read", "payment:approve", "trust:read",
       "payroll:read", "payroll:post", "report:read", "report:export",
     ],
@@ -75,9 +82,10 @@ export const SYSTEM_ROLES: {
     name: "Chief Finance Officer",
     hierarchyLevel: 20,
     permissions: [
-      "user:read", "audit:read", "gl:read", "gl:post", "gl:manage", "invoice:read",
-      "invoice:approve", "payment:read", "payment:approve", "trust:read",
-      "trust:manage", "payroll:read", "payroll:post", "report:read", "report:export",
+      "user:read", "audit:read", "gl:read", "gl:post", "gl:manage", "client:read",
+      "matter:read", "invoice:read", "invoice:approve", "payment:read",
+      "payment:approve", "trust:read", "trust:manage", "payroll:read",
+      "payroll:post", "report:read", "report:export",
     ],
   },
   {
@@ -85,7 +93,8 @@ export const SYSTEM_ROLES: {
     name: "Finance Manager",
     hierarchyLevel: 30,
     permissions: [
-      "gl:read", "gl:post", "gl:manage", "invoice:read", "invoice:create", "invoice:approve",
+      "gl:read", "gl:post", "gl:manage", "client:read", "matter:read",
+      "invoice:read", "invoice:create", "invoice:approve",
       "payment:read", "payment:create", "payment:approve", "trust:read",
       "report:read", "report:export",
     ],
@@ -95,8 +104,8 @@ export const SYSTEM_ROLES: {
     name: "Finance Officer",
     hierarchyLevel: 40,
     permissions: [
-      "gl:read", "invoice:read", "invoice:create", "payment:read",
-      "payment:create", "report:read",
+      "gl:read", "client:read", "matter:read", "invoice:read", "invoice:create",
+      "payment:read", "payment:create", "report:read",
     ],
   },
   {
@@ -121,19 +130,25 @@ export const SYSTEM_ROLES: {
     key: "PARTNER",
     name: "Partner",
     hierarchyLevel: 25,
-    permissions: ["invoice:read", "invoice:approve", "report:read", "trust:read"],
+    permissions: [
+      "client:read", "client:manage", "matter:read", "matter:manage",
+      "invoice:read", "invoice:approve", "report:read", "trust:read",
+    ],
   },
   {
     key: "LAWYER",
     name: "Associate / Lawyer",
     hierarchyLevel: 60,
-    permissions: ["invoice:read", "report:read"],
+    permissions: ["client:read", "matter:read", "matter:manage", "invoice:read", "report:read"],
   },
   {
     key: "PRACTICE_GROUP_HEAD",
     name: "Practice Group Head",
     hierarchyLevel: 25,
-    permissions: ["invoice:read", "invoice:approve", "report:read"],
+    permissions: [
+      "client:read", "client:manage", "matter:read", "matter:manage",
+      "invoice:read", "invoice:approve", "report:read",
+    ],
   },
   {
     key: "IT_ADMIN",
@@ -149,14 +164,17 @@ export const SYSTEM_ROLES: {
     name: "Auditor (read-only)",
     hierarchyLevel: 35,
     permissions: [
-      "gl:read", "invoice:read", "payment:read", "trust:read", "payroll:read",
-      "audit:read", "report:read", "report:export",
+      "gl:read", "client:read", "matter:read", "invoice:read", "payment:read",
+      "trust:read", "payroll:read", "audit:read", "report:read", "report:export",
     ],
   },
   {
     key: "MANAGEMENT_READONLY",
     name: "Read-only Management",
     hierarchyLevel: 35,
-    permissions: ["gl:read", "invoice:read", "payment:read", "report:read"],
+    permissions: [
+      "gl:read", "client:read", "matter:read", "invoice:read", "payment:read",
+      "report:read",
+    ],
   },
 ];

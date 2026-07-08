@@ -64,6 +64,39 @@ const journalLineSchema = z
     message: "A line must have a debit or a credit",
   });
 
+// --- Client & Matter Management ---
+
+export const createClientSchema = z.object({
+  type: z.enum(["CORPORATE", "INDIVIDUAL"]),
+  name: z.string().min(2).max(160),
+  email: z.string().email().optional().or(z.literal("")),
+  phone: z.string().max(30).optional().or(z.literal("")),
+  taxId: z.string().max(40).optional().or(z.literal("")),
+  amlRisk: z.enum(["LOW", "MEDIUM", "HIGH"]).default("LOW"),
+});
+export type CreateClientInput = z.infer<typeof createClientSchema>;
+
+export const updateClientSchema = z.object({
+  name: z.string().min(2).max(160).optional(),
+  email: z.string().email().optional().or(z.literal("")),
+  phone: z.string().max(30).optional(),
+  taxId: z.string().max(40).optional(),
+  kycStatus: z.enum(["PENDING", "VERIFIED", "REJECTED"]).optional(),
+  amlRisk: z.enum(["LOW", "MEDIUM", "HIGH"]).optional(),
+  status: z.enum(["ACTIVE", "INACTIVE"]).optional(),
+});
+export type UpdateClientInput = z.infer<typeof updateClientSchema>;
+
+export const createMatterSchema = z.object({
+  clientId: z.string().uuid(),
+  code: z.string().min(2).max(30),
+  name: z.string().min(2).max(160),
+  practiceAreaId: z.string().uuid().optional().or(z.literal("")),
+  responsiblePartnerId: z.string().uuid().optional().or(z.literal("")),
+  currency: z.string().length(3).default("XAF"),
+});
+export type CreateMatterInput = z.infer<typeof createMatterSchema>;
+
 export const createEntrySchema = z
   .object({
     journalId: z.string().uuid(),

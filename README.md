@@ -23,6 +23,13 @@ Remaining modules follow the roadmap in [`docs/04-roadmap.md`](docs/04-roadmap.m
 - 6 journals, a fiscal year with 12 monthly periods seeded.
 - Verified: balanced entry posts ✓, unbalanced rejected (422) ✓, non-`gl:post` role denied (403) ✓.
 
+**Module 3 — Client & Matter Management**
+- **Client onboarding** with type (corporate/individual), **KYC status**, **AML risk**, and **conflict status**.
+- **Conflict checks**: name-overlap search across clients and matters, recorded and auditable; flags CLEAR / POTENTIAL.
+- **Matters**: opened against a client + practice area + responsible partner, with a **compliance gate** — a matter can only be opened for a **KYC-verified, non-conflict-blocked** client.
+- Clients and Matters screens (EN/FR, dark mode); 6 practice areas + sample data seeded.
+- Verified: KYC gate blocks matters (422) ✓, conflict check flags overlaps (POTENTIAL) ✓, `client:manage` enforced (403 without) ✓.
+
 ## Run locally
 
 ```bash
