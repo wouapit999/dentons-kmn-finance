@@ -122,6 +122,40 @@ export const createDisbursementSchema = z.object({
 });
 export type CreateDisbursementInput = z.infer<typeof createDisbursementSchema>;
 
+// --- Billing / Accounts Receivable ---
+
+export const createInvoiceSchema = z.object({
+  matterId: z.string().uuid(),
+  date: z.string(),
+  dueDate: z.string(),
+  currency: z.string().length(3).default("XAF"),
+  vatRate: z.number().min(0).max(100).default(19.25),
+  whtRate: z.number().min(0).max(100).default(0),
+  timeEntryIds: z.array(z.string().uuid()).default([]),
+  disbursementIds: z.array(z.string().uuid()).default([]),
+  manualLines: z
+    .array(
+      z.object({
+        description: z.string().min(1).max(200),
+        amount: z.number().positive(),
+      }),
+    )
+    .default([]),
+}).refine(
+  (v) => v.timeEntryIds.length + v.disbursementIds.length + v.manualLines.length > 0,
+  { message: "Add at least one line to the invoice" },
+);
+export type CreateInvoiceInput = z.infer<typeof createInvoiceSchema>;
+
+export const createReceiptSchema = z.object({
+  invoiceId: z.string().uuid(),
+  date: z.string(),
+  amount: z.number().positive(),
+  method: z.enum(["CASH", "BANK", "CHEQUE", "TRANSFER", "MOBILE"]).default("BANK"),
+  reference: z.string().max(80).optional().or(z.literal("")),
+});
+export type CreateReceiptInput = z.infer<typeof createReceiptSchema>;
+
 export const createEntrySchema = z
   .object({
     journalId: z.string().uuid(),

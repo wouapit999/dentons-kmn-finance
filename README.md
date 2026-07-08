@@ -37,6 +37,13 @@ Remaining modules follow the roadmap in [`docs/04-roadmap.md`](docs/04-roadmap.m
 - Time Entries and Disbursements screens (EN/FR, dark mode); sample data seeded.
 - Verified: value computed correctly (150 min @ 80,000 = 200,000) ✓, non-`time:log` role denied (403) ✓, invalid matter rejected (422) ✓.
 
+**Module 6 — Billing / Accounts Receivable**
+- **Invoices** built from unbilled time + disbursements (+ manual lines), with **Cameroon VAT (19.25%)** and **withholding tax**; billed items are locked so they can't be double-invoiced.
+- **Post to the General Ledger**: a balanced entry (Dr AR + WHT receivable = Cr fees + disbursement recoveries + VAT collected), reusing the Module 2 ledger — the trial balance stays balanced.
+- **Receipts** against posted invoices (bank/cash/cheque/transfer/mobile) post Dr Bank/Cash = Cr AR, track part-paid → paid, and block overpayment.
+- Invoices screen with create/post/receipt flows (EN/FR, dark mode).
+- Verified: totals exact (subtotal 487,500 → total 562,781.25) ✓, GL & trial balance tie ✓, part-paid→paid ✓, overpayment (422) ✓, `invoice:create` enforced (403) ✓.
+
 ## Run locally
 
 ```bash

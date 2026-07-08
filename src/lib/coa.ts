@@ -35,6 +35,7 @@ export const CHART_OF_ACCOUNTS: SeedAccount[] = [
   { code: "443100", name: "VAT collected (output)", type: "LIABILITY", syscohadaClass: "4", ifrsCategory: "Tax payable" },
   { code: "445200", name: "VAT deductible (input)", type: "ASSET", syscohadaClass: "4", ifrsCategory: "Tax receivable" },
   { code: "447000", name: "PAYE / withholding tax payable", type: "LIABILITY", syscohadaClass: "4", ifrsCategory: "Tax payable" },
+  { code: "449000", name: "Withholding tax receivable (suffered)", type: "ASSET", syscohadaClass: "4", ifrsCategory: "Tax receivable" },
   { code: "462000", name: "Client trust liability (funds held)", type: "LIABILITY", syscohadaClass: "4", ifrsCategory: "Client money" },
 
   // Class 5 — Treasury (cash & bank)

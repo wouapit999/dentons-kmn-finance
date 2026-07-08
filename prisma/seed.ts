@@ -251,9 +251,9 @@ async function main() {
 
   // 8) Sample time entries & a disbursement (Module 5)
   const timeSeed = [
-    { id: "00000000-0000-0000-0000-0000000000t1", minutes: 180, rate: 75000, billable: true, narrative: "Drafting term sheet" },
-    { id: "00000000-0000-0000-0000-0000000000t2", minutes: 90, rate: 75000, billable: true, narrative: "Client call — deal structure" },
-    { id: "00000000-0000-0000-0000-0000000000t3", minutes: 60, rate: 0, billable: false, narrative: "Internal file review" },
+    { id: "00000000-0000-0000-0000-0000000000a1", minutes: 180, rate: 75000, billable: true, narrative: "Drafting term sheet" },
+    { id: "00000000-0000-0000-0000-0000000000a2", minutes: 90, rate: 75000, billable: true, narrative: "Client call — deal structure" },
+    { id: "00000000-0000-0000-0000-0000000000a3", minutes: 60, rate: 0, billable: false, narrative: "Internal file review" },
   ];
   for (const te of timeSeed) {
     await prisma.timeEntry.upsert({
@@ -276,10 +276,10 @@ async function main() {
     });
   }
   await prisma.disbursement.upsert({
-    where: { id: "00000000-0000-0000-0000-0000000000d1" },
+    where: { id: "00000000-0000-0000-0000-0000000000b1" },
     update: {},
     create: {
-      id: "00000000-0000-0000-0000-0000000000d1",
+      id: "00000000-0000-0000-0000-0000000000b1",
       companyId: company.id,
       matterId: matter1.id,
       date: new Date(Date.UTC(year, new Date().getMonth(), 16)),

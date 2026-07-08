@@ -7,6 +7,9 @@ export type UserStatus = (typeof USER_STATUS)[number];
 export const LOCALES = ["en", "fr"] as const;
 export type Locale = (typeof LOCALES)[number];
 
+// Cameroon standard VAT (TVA) rate, including the additional council tax.
+export const CAMEROON_VAT_RATE = 19.25;
+
 // Permission taxonomy: resource:action.
 // This is the source of truth; the seed inserts exactly these.
 export const PERMISSIONS = {

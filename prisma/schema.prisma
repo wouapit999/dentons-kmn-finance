@@ -42,6 +42,8 @@ model Company {
   conflictChecks ConflictCheck[]
   timeEntries    TimeEntry[]
   disbursements  Disbursement[]
+  invoices       Invoice[]
+  receipts       Receipt[]
 }
 
 model Office {
@@ -378,6 +380,8 @@ model Client {
   company        Company         @relation(fields: [companyId], references: [id])
   matters        Matter[]
   conflictChecks ConflictCheck[]
+  invoices       Invoice[]
+  receipts       Receipt[]
 
   @@index([companyId])
 }
@@ -402,6 +406,7 @@ model Matter {
   responsiblePartner User?        @relation("MatterPartner", fields: [responsiblePartnerId], references: [id])
   timeEntries       TimeEntry[]
   disbursements     Disbursement[]
+  invoices          Invoice[]
 
   @@unique([companyId, code])
   @@index([companyId])
@@ -441,6 +446,7 @@ model TimeEntry {
   currency    String   @default("XAF")
   narrative   String?
   status      String   @default("DRAFT") // DRAFT | BILLED | WRITTEN_OFF
+  invoiceId   String?
   createdById String?
   createdAt   DateTime @default(now())
 
@@ -464,6 +470,7 @@ model Disbursement {
   billable    Boolean  @default(true)
   vendorName  String?
   status      String   @default("DRAFT") // DRAFT | BILLED
+  invoiceId   String?
   createdById String?
   createdAt   DateTime @default(now())
 
@@ -472,4 +479,81 @@ model Disbursement {
 
   @@index([companyId])
   @@index([matterId])
+}
+
+// ---------------------------------------------------------------------------
+// Billing / Accounts Receivable (Module 6)
+// ---------------------------------------------------------------------------
+
+model Invoice {
+  id            String    @id @default(uuid())
+  companyId     String
+  clientId      String
+  matterId      String?
+  number        String
+  date          DateTime
+  dueDate       DateTime
+  currency      String    @default("XAF")
+  feeSubtotal   Decimal   @default(0)
+  disbSubtotal  Decimal   @default(0)
+  subtotal      Decimal   @default(0)
+  vatRate       Decimal   @default(0)
+  vatAmount     Decimal   @default(0)
+  whtRate       Decimal   @default(0)
+  whtAmount     Decimal   @default(0)
+  total         Decimal   @default(0)
+  amountPaid    Decimal   @default(0)
+  status        String    @default("DRAFT") // DRAFT | POSTED | PART_PAID | PAID | WRITTEN_OFF
+  postedEntryId String?
+  createdById   String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  company Company       @relation(fields: [companyId], references: [id])
+  client  Client        @relation(fields: [clientId], references: [id])
+  matter  Matter?       @relation(fields: [matterId], references: [id])
+  lines   InvoiceLine[]
+  receipts Receipt[]
+
+  @@unique([companyId, number])
+  @@index([companyId])
+  @@index([clientId])
+}
+
+model InvoiceLine {
+  id          String  @id @default(uuid())
+  invoiceId   String
+  sourceType  String // TIME | DISBURSEMENT | MANUAL
+  sourceId    String?
+  description String
+  quantity    Decimal @default(1)
+  unitAmount  Decimal @default(0)
+  amount      Decimal @default(0)
+  taxable     Boolean @default(true)
+
+  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([invoiceId])
+}
+
+model Receipt {
+  id            String   @id @default(uuid())
+  companyId     String
+  invoiceId     String
+  clientId      String
+  date          DateTime
+  amount        Decimal
+  currency      String   @default("XAF")
+  method        String // CASH | BANK | CHEQUE | TRANSFER | MOBILE
+  reference     String?
+  postedEntryId String?
+  createdById   String?
+  createdAt     DateTime @default(now())
+
+  company Company @relation(fields: [companyId], references: [id])
+  invoice Invoice @relation(fields: [invoiceId], references: [id])
+  client  Client  @relation(fields: [clientId], references: [id])
+
+  @@index([companyId])
+  @@index([invoiceId])
 }
