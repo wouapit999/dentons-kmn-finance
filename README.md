@@ -44,6 +44,13 @@ Remaining modules follow the roadmap in [`docs/04-roadmap.md`](docs/04-roadmap.m
 - Invoices screen with create/post/receipt flows (EN/FR, dark mode).
 - Verified: totals exact (subtotal 487,500 → total 562,781.25) ✓, GL & trial balance tie ✓, part-paid→paid ✓, overpayment (422) ✓, `invoice:create` enforced (403) ✓.
 
+**Module 7 — Trust Accounting** (law-firm compliance)
+- **Segregated client money**: per-client trust ledger (append-only) mirrored in the GL by a dedicated **trust bank (522000)** and **client-trust-liability (462000)** account — never commingled with firm funds.
+- **Non-negative invariant**: a client's trust balance can never go negative (payments/applications exceeding the balance are rejected).
+- **Deposit / Payment / Apply-to-invoice**: applying held funds settles a firm invoice via one balanced entry (trust liability ↓, AR ↓, operating bank ↑, trust bank ↓) and records a `TRUST` receipt.
+- Trust Accounts list + per-account ledger screens (EN/FR, dark mode).
+- Verified: deposit updates balance ✓, over-withdrawal rejected (422) ✓, apply-to-invoice → invoice PAID + trial balance ties ✓, `trust:manage`/`trust:read` enforced (403) ✓.
+
 ## Run locally
 
 ```bash

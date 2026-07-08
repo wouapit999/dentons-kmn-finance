@@ -83,8 +83,8 @@ export const SYSTEM_ROLES: {
       "user:read", "role:read", "audit:read", "gl:read", "client:read",
       "client:manage", "matter:read", "matter:manage", "time:read",
       "disbursement:read", "invoice:read", "invoice:approve", "payment:read",
-      "payment:approve", "trust:read", "payroll:read", "payroll:post",
-      "report:read", "report:export",
+      "payment:approve", "trust:read", "trust:manage", "payroll:read",
+      "payroll:post", "report:read", "report:export",
     ],
   },
   {

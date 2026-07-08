@@ -66,4 +66,5 @@ export const JOURNALS: { code: string; name: string; type: string }[] = [
   { code: "CSH", name: "Cash Journal", type: "CASH" },
   { code: "GEN", name: "General Journal", type: "GENERAL" },
   { code: "PAY", name: "Payroll Journal", type: "PAYROLL" },
+  { code: "TRU", name: "Trust Journal", type: "TRUST" },
 ];

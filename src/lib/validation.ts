@@ -156,6 +156,28 @@ export const createReceiptSchema = z.object({
 });
 export type CreateReceiptInput = z.infer<typeof createReceiptSchema>;
 
+// --- Trust Accounting ---
+
+export const createTrustAccountSchema = z.object({
+  clientId: z.string().uuid(),
+  currency: z.string().length(3).default("XAF"),
+});
+
+export const trustTxnSchema = z
+  .object({
+    type: z.enum(["DEPOSIT", "PAYMENT", "APPLIED"]),
+    amount: z.number().positive(),
+    date: z.string(),
+    reference: z.string().max(120).optional().or(z.literal("")),
+    matterId: z.string().uuid().optional().or(z.literal("")),
+    invoiceId: z.string().uuid().optional().or(z.literal("")),
+  })
+  .refine((v) => v.type !== "APPLIED" || !!v.invoiceId, {
+    message: "Applying trust funds requires an invoice",
+    path: ["invoiceId"],
+  });
+export type TrustTxnInput = z.infer<typeof trustTxnSchema>;
+
 export const createEntrySchema = z
   .object({
     journalId: z.string().uuid(),

@@ -44,6 +44,7 @@ model Company {
   disbursements  Disbursement[]
   invoices       Invoice[]
   receipts       Receipt[]
+  trustAccounts  TrustAccount[]
 }
 
 model Office {
@@ -382,6 +383,7 @@ model Client {
   conflictChecks ConflictCheck[]
   invoices       Invoice[]
   receipts       Receipt[]
+  trustAccounts  TrustAccount[]
 
   @@index([companyId])
 }
@@ -556,4 +558,48 @@ model Receipt {
 
   @@index([companyId])
   @@index([invoiceId])
+}
+
+// ---------------------------------------------------------------------------
+// Trust Accounting (Module 7) — segregated client money.
+// Trust funds are held separately from firm funds; a client's trust balance
+// can never go negative (enforced in the application layer + running balance).
+// ---------------------------------------------------------------------------
+
+model TrustAccount {
+  id        String   @id @default(uuid())
+  companyId String
+  clientId  String
+  currency  String   @default("XAF")
+  balance   Decimal  @default(0)
+  status    String   @default("ACTIVE") // ACTIVE | CLOSED
+  createdAt DateTime @default(now())
+
+  company Company            @relation(fields: [companyId], references: [id])
+  client  Client             @relation(fields: [clientId], references: [id])
+  entries TrustLedgerEntry[]
+
+  @@unique([companyId, clientId])
+  @@index([companyId])
+}
+
+// Append-only trust sub-ledger. Never updated or deleted.
+model TrustLedgerEntry {
+  id             String   @id @default(uuid())
+  companyId      String
+  trustAccountId String
+  date           DateTime
+  type           String // DEPOSIT | PAYMENT | APPLIED
+  amount         Decimal
+  runningBalance Decimal
+  reference      String?
+  matterId       String?
+  invoiceId      String?
+  postedEntryId  String?
+  createdById    String?
+  createdAt      DateTime @default(now())
+
+  trustAccount TrustAccount @relation(fields: [trustAccountId], references: [id], onDelete: Cascade)
+
+  @@index([trustAccountId])
 }
