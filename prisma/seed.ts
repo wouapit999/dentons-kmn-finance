@@ -232,7 +232,7 @@ async function main() {
     },
   });
 
-  await prisma.matter.upsert({
+  const matter1 = await prisma.matter.upsert({
     where: { companyId_code: { companyId: company.id, code: "M-2026-001" } },
     update: {},
     create: {
@@ -248,6 +248,50 @@ async function main() {
     },
   });
   console.log(`Clients/Matters seeded: 2 clients, 1 matter, ${areaNames.length} practice areas.`);
+
+  // 8) Sample time entries & a disbursement (Module 5)
+  const timeSeed = [
+    { id: "00000000-0000-0000-0000-0000000000t1", minutes: 180, rate: 75000, billable: true, narrative: "Drafting term sheet" },
+    { id: "00000000-0000-0000-0000-0000000000t2", minutes: 90, rate: 75000, billable: true, narrative: "Client call — deal structure" },
+    { id: "00000000-0000-0000-0000-0000000000t3", minutes: 60, rate: 0, billable: false, narrative: "Internal file review" },
+  ];
+  for (const te of timeSeed) {
+    await prisma.timeEntry.upsert({
+      where: { id: te.id },
+      update: {},
+      create: {
+        id: te.id,
+        companyId: company.id,
+        matterId: matter1.id,
+        lawyerId: cfo.id,
+        date: new Date(Date.UTC(year, new Date().getMonth(), 15)),
+        minutes: te.minutes,
+        billable: te.billable,
+        rate: te.rate,
+        amount: Math.round((te.minutes / 60) * te.rate * 100) / 100,
+        currency: "XAF",
+        narrative: te.narrative,
+        createdById: admin.id,
+      },
+    });
+  }
+  await prisma.disbursement.upsert({
+    where: { id: "00000000-0000-0000-0000-0000000000d1" },
+    update: {},
+    create: {
+      id: "00000000-0000-0000-0000-0000000000d1",
+      companyId: company.id,
+      matterId: matter1.id,
+      date: new Date(Date.UTC(year, new Date().getMonth(), 16)),
+      description: "Court filing fees",
+      amount: 150000,
+      currency: "XAF",
+      billable: true,
+      vendorName: "Tribunal de Première Instance",
+      createdById: admin.id,
+    },
+  });
+  console.log("Time & disbursements seeded: 3 time entries, 1 disbursement.");
 
   console.log("\nSeed complete. Sign in with:");
   console.log("  IT Admin : admin@dentonskmn.local / ChangeMe123!");

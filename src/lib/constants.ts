@@ -29,6 +29,12 @@ export const PERMISSIONS = {
   "matter:read": "View matters",
   "matter:manage": "Open and manage matters",
 
+  // Time & Disbursements
+  "time:read": "View time entries",
+  "time:log": "Log and edit time entries",
+  "disbursement:read": "View disbursements",
+  "disbursement:log": "Record disbursements",
+
   // Billing / AR
   "invoice:read": "View invoices",
   "invoice:create": "Create invoices",
@@ -72,9 +78,10 @@ export const SYSTEM_ROLES: {
     hierarchyLevel: 10,
     permissions: [
       "user:read", "role:read", "audit:read", "gl:read", "client:read",
-      "client:manage", "matter:read", "matter:manage", "invoice:read",
-      "invoice:approve", "payment:read", "payment:approve", "trust:read",
-      "payroll:read", "payroll:post", "report:read", "report:export",
+      "client:manage", "matter:read", "matter:manage", "time:read",
+      "disbursement:read", "invoice:read", "invoice:approve", "payment:read",
+      "payment:approve", "trust:read", "payroll:read", "payroll:post",
+      "report:read", "report:export",
     ],
   },
   {
@@ -83,9 +90,9 @@ export const SYSTEM_ROLES: {
     hierarchyLevel: 20,
     permissions: [
       "user:read", "audit:read", "gl:read", "gl:post", "gl:manage", "client:read",
-      "matter:read", "invoice:read", "invoice:approve", "payment:read",
-      "payment:approve", "trust:read", "trust:manage", "payroll:read",
-      "payroll:post", "report:read", "report:export",
+      "matter:read", "time:read", "disbursement:read", "invoice:read",
+      "invoice:approve", "payment:read", "payment:approve", "trust:read",
+      "trust:manage", "payroll:read", "payroll:post", "report:read", "report:export",
     ],
   },
   {
@@ -94,9 +101,9 @@ export const SYSTEM_ROLES: {
     hierarchyLevel: 30,
     permissions: [
       "gl:read", "gl:post", "gl:manage", "client:read", "matter:read",
-      "invoice:read", "invoice:create", "invoice:approve",
-      "payment:read", "payment:create", "payment:approve", "trust:read",
-      "report:read", "report:export",
+      "time:read", "disbursement:read", "invoice:read", "invoice:create",
+      "invoice:approve", "payment:read", "payment:create", "payment:approve",
+      "trust:read", "report:read", "report:export",
     ],
   },
   {
@@ -104,8 +111,8 @@ export const SYSTEM_ROLES: {
     name: "Finance Officer",
     hierarchyLevel: 40,
     permissions: [
-      "gl:read", "client:read", "matter:read", "invoice:read", "invoice:create",
-      "payment:read", "payment:create", "report:read",
+      "gl:read", "client:read", "matter:read", "time:read", "disbursement:read",
+      "invoice:read", "invoice:create", "payment:read", "payment:create", "report:read",
     ],
   },
   {
@@ -132,6 +139,7 @@ export const SYSTEM_ROLES: {
     hierarchyLevel: 25,
     permissions: [
       "client:read", "client:manage", "matter:read", "matter:manage",
+      "time:read", "time:log", "disbursement:read", "disbursement:log",
       "invoice:read", "invoice:approve", "report:read", "trust:read",
     ],
   },
@@ -139,7 +147,10 @@ export const SYSTEM_ROLES: {
     key: "LAWYER",
     name: "Associate / Lawyer",
     hierarchyLevel: 60,
-    permissions: ["client:read", "matter:read", "matter:manage", "invoice:read", "report:read"],
+    permissions: [
+      "client:read", "matter:read", "matter:manage", "time:read", "time:log",
+      "disbursement:read", "disbursement:log", "invoice:read", "report:read",
+    ],
   },
   {
     key: "PRACTICE_GROUP_HEAD",
@@ -147,6 +158,7 @@ export const SYSTEM_ROLES: {
     hierarchyLevel: 25,
     permissions: [
       "client:read", "client:manage", "matter:read", "matter:manage",
+      "time:read", "time:log", "disbursement:read", "disbursement:log",
       "invoice:read", "invoice:approve", "report:read",
     ],
   },
@@ -164,8 +176,9 @@ export const SYSTEM_ROLES: {
     name: "Auditor (read-only)",
     hierarchyLevel: 35,
     permissions: [
-      "gl:read", "client:read", "matter:read", "invoice:read", "payment:read",
-      "trust:read", "payroll:read", "audit:read", "report:read", "report:export",
+      "gl:read", "client:read", "matter:read", "time:read", "disbursement:read",
+      "invoice:read", "payment:read", "trust:read", "payroll:read", "audit:read",
+      "report:read", "report:export",
     ],
   },
   {
@@ -173,8 +186,8 @@ export const SYSTEM_ROLES: {
     name: "Read-only Management",
     hierarchyLevel: 35,
     permissions: [
-      "gl:read", "client:read", "matter:read", "invoice:read", "payment:read",
-      "report:read",
+      "gl:read", "client:read", "matter:read", "time:read", "disbursement:read",
+      "invoice:read", "payment:read", "report:read",
     ],
   },
 ];

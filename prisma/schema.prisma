@@ -40,6 +40,8 @@ model Company {
   clients        Client[]
   matters        Matter[]
   conflictChecks ConflictCheck[]
+  timeEntries    TimeEntry[]
+  disbursements  Disbursement[]
 }
 
 model Office {
@@ -98,6 +100,7 @@ model User {
   loginAttempts  LoginAttempt[]
   auditLogs      AuditLog[]
   mattersLed     Matter[]        @relation("MatterPartner")
+  timeEntries    TimeEntry[]     @relation("LawyerTime")
 
   @@unique([companyId, email])
   @@index([companyId])
@@ -397,6 +400,8 @@ model Matter {
   client            Client        @relation(fields: [clientId], references: [id])
   practiceArea      PracticeArea? @relation(fields: [practiceAreaId], references: [id])
   responsiblePartner User?        @relation("MatterPartner", fields: [responsiblePartnerId], references: [id])
+  timeEntries       TimeEntry[]
+  disbursements     Disbursement[]
 
   @@unique([companyId, code])
   @@index([companyId])
@@ -417,4 +422,54 @@ model ConflictCheck {
   client  Client  @relation(fields: [clientId], references: [id], onDelete: Cascade)
 
   @@index([clientId])
+}
+
+// ---------------------------------------------------------------------------
+// Time & Disbursements (Module 5)
+// ---------------------------------------------------------------------------
+
+model TimeEntry {
+  id          String   @id @default(uuid())
+  companyId   String
+  matterId    String
+  lawyerId    String
+  date        DateTime
+  minutes     Int
+  billable    Boolean  @default(true)
+  rate        Decimal  @default(0) // hourly rate in the entry currency
+  amount      Decimal  @default(0) // minutes/60 * rate, computed server-side
+  currency    String   @default("XAF")
+  narrative   String?
+  status      String   @default("DRAFT") // DRAFT | BILLED | WRITTEN_OFF
+  createdById String?
+  createdAt   DateTime @default(now())
+
+  company Company @relation(fields: [companyId], references: [id])
+  matter  Matter  @relation(fields: [matterId], references: [id])
+  lawyer  User    @relation("LawyerTime", fields: [lawyerId], references: [id])
+
+  @@index([companyId])
+  @@index([matterId])
+  @@index([lawyerId])
+}
+
+model Disbursement {
+  id          String   @id @default(uuid())
+  companyId   String
+  matterId    String
+  date        DateTime
+  description String
+  amount      Decimal
+  currency    String   @default("XAF")
+  billable    Boolean  @default(true)
+  vendorName  String?
+  status      String   @default("DRAFT") // DRAFT | BILLED
+  createdById String?
+  createdAt   DateTime @default(now())
+
+  company Company @relation(fields: [companyId], references: [id])
+  matter  Matter  @relation(fields: [matterId], references: [id])
+
+  @@index([companyId])
+  @@index([matterId])
 }

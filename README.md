@@ -30,6 +30,13 @@ Remaining modules follow the roadmap in [`docs/04-roadmap.md`](docs/04-roadmap.m
 - Clients and Matters screens (EN/FR, dark mode); 6 practice areas + sample data seeded.
 - Verified: KYC gate blocks matters (422) ✓, conflict check flags overlaps (POTENTIAL) ✓, `client:manage` enforced (403 without) ✓.
 
+**Module 5 — Time & Disbursements**
+- **Time entries** by matter and fee earner, billable/non-billable, with **server-computed value** (minutes ÷ 60 × rate) and a **billable-hours / value summary**.
+- **Disbursements**: matter costs with vendor, billable flag, and billable-total summary.
+- Guarded so time/costs can't be booked to a **closed** matter; `time:log` / `disbursement:log` enforced.
+- Time Entries and Disbursements screens (EN/FR, dark mode); sample data seeded.
+- Verified: value computed correctly (150 min @ 80,000 = 200,000) ✓, non-`time:log` role denied (403) ✓, invalid matter rejected (422) ✓.
+
 ## Run locally
 
 ```bash

@@ -97,6 +97,31 @@ export const createMatterSchema = z.object({
 });
 export type CreateMatterInput = z.infer<typeof createMatterSchema>;
 
+// --- Time & Disbursements ---
+
+export const createTimeEntrySchema = z.object({
+  matterId: z.string().uuid(),
+  lawyerId: z.string().uuid().optional().or(z.literal("")),
+  date: z.string(), // ISO date
+  minutes: z.number().int().positive().max(24 * 60),
+  billable: z.boolean().default(true),
+  rate: z.number().nonnegative().default(0),
+  currency: z.string().length(3).default("XAF"),
+  narrative: z.string().max(500).optional().or(z.literal("")),
+});
+export type CreateTimeEntryInput = z.infer<typeof createTimeEntrySchema>;
+
+export const createDisbursementSchema = z.object({
+  matterId: z.string().uuid(),
+  date: z.string(),
+  description: z.string().min(2).max(300),
+  amount: z.number().positive(),
+  currency: z.string().length(3).default("XAF"),
+  billable: z.boolean().default(true),
+  vendorName: z.string().max(160).optional().or(z.literal("")),
+});
+export type CreateDisbursementInput = z.infer<typeof createDisbursementSchema>;
+
 export const createEntrySchema = z
   .object({
     journalId: z.string().uuid(),
