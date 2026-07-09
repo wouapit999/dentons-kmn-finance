@@ -51,12 +51,14 @@ export const CHART_OF_ACCOUNTS: SeedAccount[] = [
   { code: "641000", name: "Salaries & wages", type: "EXPENSE", syscohadaClass: "6", ifrsCategory: "Employee benefits" },
   { code: "645000", name: "Employer social charges (CNPS)", type: "EXPENSE", syscohadaClass: "6", ifrsCategory: "Employee benefits" },
   { code: "681000", name: "Depreciation expense", type: "EXPENSE", syscohadaClass: "6", ifrsCategory: "Depreciation & amortisation" },
+  { code: "654000", name: "Loss on asset disposal", type: "EXPENSE", syscohadaClass: "6", ifrsCategory: "Other operating expenses" },
 
   // Class 7 — Revenue
   { code: "706000", name: "Legal fee income", type: "REVENUE", syscohadaClass: "7", ifrsCategory: "Revenue" },
   { code: "707000", name: "Disbursement recoveries", type: "REVENUE", syscohadaClass: "7", ifrsCategory: "Revenue" },
   { code: "771000", name: "Interest income", type: "REVENUE", syscohadaClass: "7", ifrsCategory: "Finance income" },
   { code: "776000", name: "Foreign exchange gains", type: "REVENUE", syscohadaClass: "7", ifrsCategory: "Finance income" },
+  { code: "754000", name: "Gain on asset disposal", type: "REVENUE", syscohadaClass: "7", ifrsCategory: "Other operating income" },
 ];
 
 export const JOURNALS: { code: string; name: string; type: string }[] = [

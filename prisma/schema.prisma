@@ -50,6 +50,7 @@ model Company {
   vendorPayments VendorPayment[]
   employees      Employee[]
   payrollRuns    PayrollRun[]
+  fixedAssets    FixedAsset[]
 }
 
 model Office {
@@ -756,4 +757,49 @@ model Payslip {
 
   @@index([runId])
   @@index([employeeId])
+}
+
+// ---------------------------------------------------------------------------
+// Fixed Assets (Module 12)
+// ---------------------------------------------------------------------------
+
+model FixedAsset {
+  id                      String    @id @default(uuid())
+  companyId               String
+  tag                     String
+  name                    String
+  category                String?
+  assetAccountCode        String // GL asset account (e.g. 244000)
+  acquisitionDate         DateTime
+  cost                    Decimal
+  salvageValue            Decimal   @default(0)
+  usefulLifeMonths        Int
+  accumulatedDepreciation Decimal   @default(0)
+  monthsDepreciated       Int       @default(0)
+  currency                String    @default("XAF")
+  status                  String    @default("ACTIVE") // ACTIVE | DISPOSED
+  disposedAt              DateTime?
+  createdById             String?
+  createdAt               DateTime  @default(now())
+
+  company     Company             @relation(fields: [companyId], references: [id])
+  depreciations DepreciationEntry[]
+
+  @@unique([companyId, tag])
+  @@index([companyId])
+}
+
+model DepreciationEntry {
+  id            String   @id @default(uuid())
+  companyId     String
+  assetId       String
+  period        String
+  date          DateTime
+  amount        Decimal
+  postedEntryId String?
+  createdAt     DateTime @default(now())
+
+  asset FixedAsset @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  @@index([assetId])
 }

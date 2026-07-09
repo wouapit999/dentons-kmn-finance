@@ -230,6 +230,30 @@ export const createPayrollRunSchema = z.object({
 });
 export type CreatePayrollRunInput = z.infer<typeof createPayrollRunSchema>;
 
+// --- Fixed Assets ---
+
+export const createAssetSchema = z.object({
+  tag: z.string().min(1).max(40),
+  name: z.string().min(2).max(160),
+  category: z.string().max(80).optional().or(z.literal("")),
+  assetAccountCode: z.string().min(3).max(20),
+  acquisitionDate: z.string(),
+  cost: z.number().positive(),
+  salvageValue: z.number().nonnegative().default(0),
+  usefulLifeMonths: z.number().int().positive().max(1200),
+});
+export type CreateAssetInput = z.infer<typeof createAssetSchema>;
+
+export const depreciateSchema = z.object({
+  period: z.string().min(3).max(40),
+  date: z.string(),
+});
+
+export const disposeAssetSchema = z.object({
+  date: z.string(),
+  proceeds: z.number().nonnegative().default(0),
+});
+
 export const createEntrySchema = z
   .object({
     journalId: z.string().uuid(),

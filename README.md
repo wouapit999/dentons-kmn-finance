@@ -69,6 +69,12 @@ Remaining modules follow the roadmap in [`docs/04-roadmap.md`](docs/04-roadmap.m
 - Reports screen with tabbed views (EN/FR, dark mode); `report:read` gated.
 - Verified live: income statement revenue 887,500 / expenses 2,608,690; balance sheet balances (1,096,843.75 = 1,096,843.75); a past-due invoice correctly aged into 61–90 days.
 
+**Module 12 — Fixed Assets**
+- **Asset register** with cost, salvage, useful life; **straight-line depreciation** run that posts one journal (Dr depreciation expense 681000 = Cr accumulated depreciation 281000) and stops at cost−salvage.
+- **Disposal** recognises gain/loss: Dr accumulated depreciation + Dr bank (proceeds) = Cr asset cost ± gain (754000) / loss (654000).
+- Fixed Assets screen with register / depreciate / dispose (EN/FR, dark mode); `asset:read` / `asset:manage` / `asset:post` role split.
+- Verified: 1,200,000 over 36 mo → 33,333.33/mo (NBV 1,166,666.67); disposal at 1,190,000 → gain 23,333.33; trial balance ties after both; auditor denied depreciation (403).
+
 ## Run locally
 
 ```bash
