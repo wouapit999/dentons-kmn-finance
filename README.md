@@ -51,6 +51,12 @@ Remaining modules follow the roadmap in [`docs/04-roadmap.md`](docs/04-roadmap.m
 - Trust Accounts list + per-account ledger screens (EN/FR, dark mode).
 - Verified: deposit updates balance ✓, over-withdrawal rejected (422) ✓, apply-to-invoice → invoice PAID + trial balance ties ✓, `trust:manage`/`trust:read` enforced (403) ✓.
 
+**Module 8 — Accounts Payable**
+- **Suppliers**, **vendor bills** (with input VAT deductible against a chosen expense account), and **vendor payments** — the mirror of Billing/AR.
+- Post bill → GL (Dr expense + Dr input VAT (445200) = Cr suppliers/AP (401000)); pay bill → GL (Dr AP = Cr bank/cash); part-paid → paid, overpayment blocked.
+- Suppliers + Accounts Payable screens (EN/FR, dark mode); `ap:read` / `ap:manage` / `ap:approve` role split.
+- Verified: bill 500,000 + VAT 96,250 = 596,250, trial balance ties ✓, part→full payment ✓, overpayment (422) ✓, auditor (read-only) denied create/pay (403) ✓.
+
 ## Run locally
 
 ```bash

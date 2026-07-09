@@ -45,6 +45,9 @@ model Company {
   invoices       Invoice[]
   receipts       Receipt[]
   trustAccounts  TrustAccount[]
+  suppliers      Supplier[]
+  vendorBills    VendorBill[]
+  vendorPayments VendorPayment[]
 }
 
 model Office {
@@ -602,4 +605,79 @@ model TrustLedgerEntry {
   trustAccount TrustAccount @relation(fields: [trustAccountId], references: [id], onDelete: Cascade)
 
   @@index([trustAccountId])
+}
+
+// ---------------------------------------------------------------------------
+// Accounts Payable (Module 8)
+// ---------------------------------------------------------------------------
+
+model Supplier {
+  id        String   @id @default(uuid())
+  companyId String
+  name      String
+  email     String?
+  phone     String?
+  taxId     String?
+  status    String   @default("ACTIVE") // ACTIVE | INACTIVE
+  createdById String?
+  createdAt DateTime @default(now())
+
+  company  Company         @relation(fields: [companyId], references: [id])
+  bills    VendorBill[]
+  payments VendorPayment[]
+
+  @@index([companyId])
+}
+
+model VendorBill {
+  id                 String   @id @default(uuid())
+  companyId          String
+  supplierId         String
+  number             String
+  supplierRef        String?
+  date               DateTime
+  dueDate            DateTime
+  description        String
+  expenseAccountCode String
+  currency           String   @default("XAF")
+  subtotal           Decimal  @default(0)
+  vatRate            Decimal  @default(0)
+  vatAmount          Decimal  @default(0)
+  total              Decimal  @default(0)
+  amountPaid         Decimal  @default(0)
+  status             String   @default("DRAFT") // DRAFT | POSTED | PART_PAID | PAID
+  postedEntryId      String?
+  createdById        String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  company  Company         @relation(fields: [companyId], references: [id])
+  supplier Supplier        @relation(fields: [supplierId], references: [id])
+  payments VendorPayment[]
+
+  @@unique([companyId, number])
+  @@index([companyId])
+  @@index([supplierId])
+}
+
+model VendorPayment {
+  id            String   @id @default(uuid())
+  companyId     String
+  billId        String
+  supplierId    String
+  date          DateTime
+  amount        Decimal
+  currency      String   @default("XAF")
+  method        String // CASH | BANK | CHEQUE | TRANSFER | MOBILE
+  reference     String?
+  postedEntryId String?
+  createdById   String?
+  createdAt     DateTime @default(now())
+
+  company  Company    @relation(fields: [companyId], references: [id])
+  bill     VendorBill @relation(fields: [billId], references: [id])
+  supplier Supplier   @relation(fields: [supplierId], references: [id])
+
+  @@index([companyId])
+  @@index([billId])
 }

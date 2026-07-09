@@ -178,6 +178,38 @@ export const trustTxnSchema = z
   });
 export type TrustTxnInput = z.infer<typeof trustTxnSchema>;
 
+// --- Accounts Payable ---
+
+export const createSupplierSchema = z.object({
+  name: z.string().min(2).max(160),
+  email: z.string().email().optional().or(z.literal("")),
+  phone: z.string().max(30).optional().or(z.literal("")),
+  taxId: z.string().max(40).optional().or(z.literal("")),
+});
+export type CreateSupplierInput = z.infer<typeof createSupplierSchema>;
+
+export const createBillSchema = z.object({
+  supplierId: z.string().uuid(),
+  supplierRef: z.string().max(60).optional().or(z.literal("")),
+  date: z.string(),
+  dueDate: z.string(),
+  description: z.string().min(2).max(300),
+  expenseAccountCode: z.string().min(3).max(20),
+  amount: z.number().positive(),
+  vatRate: z.number().min(0).max(100).default(19.25),
+  currency: z.string().length(3).default("XAF"),
+});
+export type CreateBillInput = z.infer<typeof createBillSchema>;
+
+export const payBillSchema = z.object({
+  billId: z.string().uuid(),
+  date: z.string(),
+  amount: z.number().positive(),
+  method: z.enum(["CASH", "BANK", "CHEQUE", "TRANSFER", "MOBILE"]).default("BANK"),
+  reference: z.string().max(80).optional().or(z.literal("")),
+});
+export type PayBillInput = z.infer<typeof payBillSchema>;
+
 export const createEntrySchema = z
   .object({
     journalId: z.string().uuid(),
