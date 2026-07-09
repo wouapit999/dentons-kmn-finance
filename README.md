@@ -63,6 +63,12 @@ Remaining modules follow the roadmap in [`docs/04-roadmap.md`](docs/04-roadmap.m
 - Employees + Payroll screens with per-payslip breakdown and run totals (EN/FR, dark mode).
 - Verified by hand: Awa (gross 1,050,000) → CNPS 31,500, IRPP 174,533, CAC 17,453, CRTV 9,750, CFC 10,500, net 806,264 ✓; run posts balanced (2,408,690) ✓; double-post (422) ✓; `payroll:manage` enforced (403) ✓.
 
+**Module 15 — Reporting & Financial Statements**
+- **Income Statement**, **Balance Sheet**, **Aged Receivables**, **Aged Payables** — all computed from POSTED ledger lines (single source of truth), with date filters and **CSV export**.
+- Balance sheet ties (Assets = Liabilities + Equity incl. period result); aged buckets 0–30 / 31–60 / 61–90 / 90+.
+- Reports screen with tabbed views (EN/FR, dark mode); `report:read` gated.
+- Verified live: income statement revenue 887,500 / expenses 2,608,690; balance sheet balances (1,096,843.75 = 1,096,843.75); a past-due invoice correctly aged into 61–90 days.
+
 ## Run locally
 
 ```bash
