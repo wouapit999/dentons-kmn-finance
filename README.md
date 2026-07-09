@@ -57,6 +57,12 @@ Remaining modules follow the roadmap in [`docs/04-roadmap.md`](docs/04-roadmap.m
 - Suppliers + Accounts Payable screens (EN/FR, dark mode); `ap:read` / `ap:manage` / `ap:approve` role split.
 - Verified: bill 500,000 + VAT 96,250 = 596,250, trial balance ties ✓, part→full payment ✓, overpayment (422) ✓, auditor (read-only) denied create/pay (403) ✓.
 
+**Module 14 — Payroll & Cameroon Tax**
+- **Employee master** + **payroll runs** that compute a payslip per employee using real Cameroon rules — **CNPS** (4.2% employee, employer pension/family/risk, 750k ceiling), **IRPP** (progressive bands on 70%-abated taxable), **CAC** (10% of IRPP), **CRTV/RAV** (bracket table), **Crédit Foncier** (1%/1.5%), **FNE** (1%). All rates in one configurable file (`src/lib/payroll.ts`).
+- **Post payroll journal** to the GL: Dr salaries + employer charges = Cr net payable + CNPS payable + taxes payable (balanced).
+- Employees + Payroll screens with per-payslip breakdown and run totals (EN/FR, dark mode).
+- Verified by hand: Awa (gross 1,050,000) → CNPS 31,500, IRPP 174,533, CAC 17,453, CRTV 9,750, CFC 10,500, net 806,264 ✓; run posts balanced (2,408,690) ✓; double-post (422) ✓; `payroll:manage` enforced (403) ✓.
+
 ## Run locally
 
 ```bash

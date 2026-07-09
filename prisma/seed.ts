@@ -293,6 +293,34 @@ async function main() {
   });
   console.log("Time & disbursements seeded: 3 time entries, 1 disbursement.");
 
+  // 9) Employees for payroll (Module 14)
+  const employeeSeed = [
+    { no: "EMP-001", name: "Awa Ngono", position: "Senior Associate", base: 850000, housing: 150000, transport: 50000 },
+    { no: "EMP-002", name: "Bikai Etienne", position: "Paralegal", base: 350000, housing: 60000, transport: 30000 },
+    { no: "EMP-003", name: "Christelle Fotso", position: "Accountant", base: 500000, housing: 90000, transport: 40000 },
+  ];
+  for (let i = 0; i < employeeSeed.length; i++) {
+    const e = employeeSeed[i];
+    const id = `00000000-0000-0000-0000-0000000000e${i + 1}`;
+    await prisma.employee.upsert({
+      where: { id },
+      update: {},
+      create: {
+        id,
+        companyId: company.id,
+        employeeNo: e.no,
+        fullName: e.name,
+        position: e.position,
+        baseSalary: e.base,
+        housingAllowance: e.housing,
+        transportAllowance: e.transport,
+        cnpsNo: `CN${100000 + i}`,
+        createdById: admin.id,
+      },
+    });
+  }
+  console.log(`Employees seeded: ${employeeSeed.length}.`);
+
   console.log("\nSeed complete. Sign in with:");
   console.log("  IT Admin : admin@dentonskmn.local / ChangeMe123!");
   console.log("  CFO      : cfo@dentonskmn.local   / ChangeMe123!");

@@ -210,6 +210,26 @@ export const payBillSchema = z.object({
 });
 export type PayBillInput = z.infer<typeof payBillSchema>;
 
+// --- Payroll ---
+
+export const createEmployeeSchema = z.object({
+  employeeNo: z.string().min(1).max(30),
+  fullName: z.string().min(2).max(160),
+  position: z.string().max(120).optional().or(z.literal("")),
+  baseSalary: z.number().nonnegative(),
+  housingAllowance: z.number().nonnegative().default(0),
+  transportAllowance: z.number().nonnegative().default(0),
+  cnpsNo: z.string().max(40).optional().or(z.literal("")),
+  bankAccount: z.string().max(40).optional().or(z.literal("")),
+});
+export type CreateEmployeeInput = z.infer<typeof createEmployeeSchema>;
+
+export const createPayrollRunSchema = z.object({
+  period: z.string().min(3).max(40),
+  periodId: z.string().uuid().optional().or(z.literal("")),
+});
+export type CreatePayrollRunInput = z.infer<typeof createPayrollRunSchema>;
+
 export const createEntrySchema = z
   .object({
     journalId: z.string().uuid(),

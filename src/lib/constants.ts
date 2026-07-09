@@ -59,6 +59,7 @@ export const PERMISSIONS = {
 
   // Payroll
   "payroll:read": "View payroll",
+  "payroll:manage": "Manage employees and prepare payroll runs",
   "payroll:post": "Post/approve payroll runs",
 
   // Reporting
@@ -89,7 +90,7 @@ export const SYSTEM_ROLES: {
       "client:manage", "matter:read", "matter:manage", "time:read",
       "disbursement:read", "invoice:read", "invoice:approve", "payment:read",
       "payment:approve", "ap:read", "ap:approve", "trust:read", "trust:manage",
-      "payroll:read", "payroll:post", "report:read", "report:export",
+      "payroll:read", "payroll:manage", "payroll:post", "report:read", "report:export",
     ],
   },
   {
@@ -100,8 +101,8 @@ export const SYSTEM_ROLES: {
       "user:read", "audit:read", "gl:read", "gl:post", "gl:manage", "client:read",
       "matter:read", "time:read", "disbursement:read", "invoice:read",
       "invoice:approve", "payment:read", "payment:approve", "ap:read", "ap:manage",
-      "ap:approve", "trust:read", "trust:manage", "payroll:read", "payroll:post",
-      "report:read", "report:export",
+      "ap:approve", "trust:read", "trust:manage", "payroll:read", "payroll:manage",
+      "payroll:post", "report:read", "report:export",
     ],
   },
   {
@@ -135,7 +136,7 @@ export const SYSTEM_ROLES: {
     key: "HR_PAYROLL_OFFICER",
     name: "HR Payroll Officer",
     hierarchyLevel: 40,
-    permissions: ["payroll:read", "payroll:post", "report:read"],
+    permissions: ["payroll:read", "payroll:manage", "payroll:post", "report:read"],
   },
   {
     key: "PROCUREMENT_OFFICER",

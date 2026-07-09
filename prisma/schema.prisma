@@ -48,6 +48,8 @@ model Company {
   suppliers      Supplier[]
   vendorBills    VendorBill[]
   vendorPayments VendorPayment[]
+  employees      Employee[]
+  payrollRuns    PayrollRun[]
 }
 
 model Office {
@@ -680,4 +682,78 @@ model VendorPayment {
 
   @@index([companyId])
   @@index([billId])
+}
+
+// ---------------------------------------------------------------------------
+// Payroll & Cameroon Tax (Module 14)
+// ---------------------------------------------------------------------------
+
+model Employee {
+  id                 String   @id @default(uuid())
+  companyId          String
+  employeeNo         String
+  fullName           String
+  position           String?
+  baseSalary         Decimal  @default(0)
+  housingAllowance   Decimal  @default(0)
+  transportAllowance Decimal  @default(0)
+  cnpsNo             String?
+  bankAccount        String?
+  currency           String   @default("XAF")
+  status             String   @default("ACTIVE") // ACTIVE | INACTIVE
+  hireDate           DateTime?
+  createdById        String?
+  createdAt          DateTime @default(now())
+
+  company  Company   @relation(fields: [companyId], references: [id])
+  payslips Payslip[]
+
+  @@unique([companyId, employeeNo])
+  @@index([companyId])
+}
+
+model PayrollRun {
+  id            String   @id @default(uuid())
+  companyId     String
+  period        String // e.g. "July 2026"
+  periodId      String? // linked accounting period
+  status        String   @default("DRAFT") // DRAFT | POSTED
+  grossTotal    Decimal  @default(0)
+  netTotal      Decimal  @default(0)
+  postedEntryId String?
+  createdById   String?
+  createdAt     DateTime @default(now())
+
+  company  Company   @relation(fields: [companyId], references: [id])
+  payslips Payslip[]
+
+  @@index([companyId])
+}
+
+model Payslip {
+  id                 String   @id @default(uuid())
+  companyId          String
+  runId              String
+  employeeId         String
+  gross              Decimal
+  cnpsEmployee       Decimal
+  cnpsEmployer       Decimal
+  cfcEmployee        Decimal
+  cfcEmployer        Decimal
+  fne                Decimal
+  taxableMonthly     Decimal
+  irpp               Decimal
+  cac                Decimal
+  crtv               Decimal
+  employeeDeductions Decimal
+  employerCharges    Decimal
+  net                Decimal
+  currency           String   @default("XAF")
+  createdAt          DateTime @default(now())
+
+  run      PayrollRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+  employee Employee   @relation(fields: [employeeId], references: [id])
+
+  @@index([runId])
+  @@index([employeeId])
 }
