@@ -6,8 +6,14 @@ Built with **Next.js 14 (App Router) · TypeScript · TailwindCSS · Prisma · R
 
 ## Status
 
-**Modules 1 & 2 are live and working** — a real, compiling, deployable system, not a mockup.
-Remaining modules follow the roadmap in [`docs/04-roadmap.md`](docs/04-roadmap.md).
+**All 16 modules are built, verified, and committed** — a real, compiling, deployable
+system, not a mockup. Every value-moving action posts double-entry to one balanced
+General Ledger and flows through to the financial statements.
+
+Modules: Auth/RBAC/Users · General Ledger · Client & Matter · Time & Disbursements ·
+Billing/AR · Trust Accounting · Accounts Payable · Payroll & Cameroon Tax · Fixed Assets ·
+Budgeting · Cash Management · Banking · Procurement · Reporting & Financial Statements ·
+Insights/Analytics (+ reference data).
 
 **Module 1 — Auth / RBAC / Users**
 - Email/password login with server sessions (JWT in an httpOnly, `Secure`, `SameSite` cookie), failed-login lockout, logout.
@@ -80,6 +86,23 @@ Remaining modules follow the roadmap in [`docs/04-roadmap.md`](docs/04-roadmap.m
 - Favourable/unfavourable logic per account type (under-budget expense = favourable; under-target revenue = unfavourable), with % used.
 - Budgets screen: create with dynamic account lines + variance view (EN/FR, dark mode); `budget:read` / `budget:manage`.
 - Verified: depreciation actual 33,333.33 vs budget 500,000 (6.67% used, favourable); revenue-under-target flagged unfavourable; cashier denied budget:read (403).
+
+**Module 9 — Cash Management**
+- Petty-cash accounts + cash in/out posting to the GL (counterpart account chosen), with a **non-negative balance guard**.
+- Verified: in 500,000 / out 120,000 → balance 380,000; overdraw → 422.
+
+**Module 10 — Banking**
+- Bank accounts + transactions (charge / interest / transfers) posting to the GL, plus **reconciliation** (tick cleared items; book vs cleared vs unreconciled).
+- Verified: charge −5,000 + interest +8,000 → book 3,000; reconcile updates cleared/unreconciled; GL balanced.
+
+**Module 11 — Procurement**
+- Purchase requests → **approval workflow** → purchase orders, with **segregation of duties** (a requester cannot approve their own request).
+- Verified: PR raised, self-approval → 422, approve + PO issued.
+
+**Module 16 — Insights & Analytics**
+- Deterministic analytics from ledger data: **duplicate-bill detection** (same supplier + amount within 30 days), **cash-flow forecast** (AR inflows vs AP outflows by 30/60/90-day horizon), overdue alerts.
+- Verified: two identical bills flagged as a duplicate; forecast/alerts compute from live data.
+- OCR & natural-language reporting are documented extension points requiring an external AI provider (Claude API) — intentionally not wired in.
 
 ## Run locally
 

@@ -53,6 +53,20 @@ export const PERMISSIONS = {
   "ap:manage": "Create suppliers and vendor bills",
   "ap:approve": "Post vendor bills and record vendor payments",
 
+  // Cash Management
+  "cash:read": "View cash accounts and movements",
+  "cash:manage": "Open cash accounts and record cash movements",
+
+  // Banking
+  "bank:read": "View bank accounts and transactions",
+  "bank:manage": "Open bank accounts and record bank transactions",
+  "bank:reconcile": "Reconcile bank accounts",
+
+  // Procurement
+  "procure:read": "View purchase requests and orders",
+  "procure:request": "Create purchase requests",
+  "procure:approve": "Approve purchase requests and issue orders",
+
   // Trust accounting
   "trust:read": "View trust accounts",
   "trust:manage": "Manage trust transactions",
@@ -100,7 +114,8 @@ export const SYSTEM_ROLES: {
       "disbursement:read", "invoice:read", "invoice:approve", "payment:read",
       "payment:approve", "ap:read", "ap:approve", "trust:read", "trust:manage",
       "payroll:read", "payroll:manage", "payroll:post", "asset:read",
-      "budget:read", "budget:manage", "report:read", "report:export",
+      "budget:read", "budget:manage", "cash:read", "bank:read",
+      "procure:read", "procure:approve", "report:read", "report:export",
     ],
   },
   {
@@ -113,7 +128,9 @@ export const SYSTEM_ROLES: {
       "invoice:approve", "payment:read", "payment:approve", "ap:read", "ap:manage",
       "ap:approve", "trust:read", "trust:manage", "payroll:read", "payroll:manage",
       "payroll:post", "asset:read", "asset:manage", "asset:post",
-      "budget:read", "budget:manage", "report:read", "report:export",
+      "budget:read", "budget:manage", "cash:read", "cash:manage",
+      "bank:read", "bank:manage", "bank:reconcile", "procure:read",
+      "procure:request", "procure:approve", "report:read", "report:export",
     ],
   },
   {
@@ -126,7 +143,8 @@ export const SYSTEM_ROLES: {
       "invoice:approve", "payment:read", "payment:create", "payment:approve",
       "ap:read", "ap:manage", "ap:approve", "trust:read", "asset:read",
       "asset:manage", "asset:post", "budget:read", "budget:manage",
-      "report:read", "report:export",
+      "cash:read", "cash:manage", "bank:read", "bank:manage", "bank:reconcile",
+      "procure:read", "procure:request", "procure:approve", "report:read", "report:export",
     ],
   },
   {
@@ -136,14 +154,15 @@ export const SYSTEM_ROLES: {
     permissions: [
       "gl:read", "client:read", "matter:read", "time:read", "disbursement:read",
       "invoice:read", "invoice:create", "payment:read", "payment:create",
-      "ap:read", "ap:manage", "asset:read", "asset:manage", "report:read",
+      "ap:read", "ap:manage", "asset:read", "asset:manage", "cash:read",
+      "cash:manage", "bank:read", "procure:read", "procure:request", "report:read",
     ],
   },
   {
     key: "CASHIER",
     name: "Cashier",
     hierarchyLevel: 50,
-    permissions: ["payment:read", "payment:create", "report:read"],
+    permissions: ["payment:read", "payment:create", "cash:read", "cash:manage", "report:read"],
   },
   {
     key: "HR_PAYROLL_OFFICER",
@@ -155,7 +174,10 @@ export const SYSTEM_ROLES: {
     key: "PROCUREMENT_OFFICER",
     name: "Procurement Officer",
     hierarchyLevel: 40,
-    permissions: ["payment:read", "ap:read", "ap:manage", "report:read"],
+    permissions: [
+      "payment:read", "ap:read", "ap:manage", "procure:read", "procure:request",
+      "report:read",
+    ],
   },
   {
     key: "PARTNER",
@@ -202,7 +224,8 @@ export const SYSTEM_ROLES: {
     permissions: [
       "gl:read", "client:read", "matter:read", "time:read", "disbursement:read",
       "invoice:read", "payment:read", "ap:read", "trust:read", "payroll:read",
-      "asset:read", "budget:read", "audit:read", "report:read", "report:export",
+      "asset:read", "budget:read", "cash:read", "bank:read", "procure:read",
+      "audit:read", "report:read", "report:export",
     ],
   },
   {
@@ -212,6 +235,7 @@ export const SYSTEM_ROLES: {
     permissions: [
       "gl:read", "client:read", "matter:read", "time:read", "disbursement:read",
       "invoice:read", "payment:read", "ap:read", "asset:read", "budget:read",
+      "cash:read", "bank:read", "procure:read",
       "report:read",
     ],
   },

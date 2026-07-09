@@ -270,6 +270,46 @@ export const createBudgetSchema = z.object({
 });
 export type CreateBudgetInput = z.infer<typeof createBudgetSchema>;
 
+// --- Cash Management ---
+export const createCashAccountSchema = z.object({
+  name: z.string().min(2).max(120),
+  glAccountCode: z.string().min(3).max(20).default("571000"),
+});
+export const cashTxnSchema = z.object({
+  cashAccountId: z.string().uuid(),
+  date: z.string(),
+  type: z.enum(["IN", "OUT"]),
+  amount: z.number().positive(),
+  description: z.string().min(2).max(200),
+  counterpartAccountCode: z.string().min(3).max(20),
+});
+
+// --- Banking ---
+export const createBankAccountSchema = z.object({
+  name: z.string().min(2).max(120),
+  bankName: z.string().max(120).optional().or(z.literal("")),
+  accountNumber: z.string().max(40).optional().or(z.literal("")),
+  glAccountCode: z.string().min(3).max(20).default("521000"),
+});
+export const bankTxnSchema = z.object({
+  bankAccountId: z.string().uuid(),
+  date: z.string(),
+  type: z.enum(["CHARGE", "INTEREST", "TRANSFER_IN", "TRANSFER_OUT"]),
+  amount: z.number().positive(),
+  description: z.string().min(2).max(200),
+  counterpartAccountCode: z.string().min(3).max(20),
+});
+
+// --- Procurement ---
+export const createPRSchema = z.object({
+  description: z.string().min(2).max(300),
+  amount: z.number().positive(),
+});
+export const decidePRSchema = z.object({
+  decision: z.enum(["APPROVED", "REJECTED"]),
+  note: z.string().max(300).optional().or(z.literal("")),
+});
+
 export const createEntrySchema = z
   .object({
     journalId: z.string().uuid(),

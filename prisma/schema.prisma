@@ -52,6 +52,12 @@ model Company {
   payrollRuns    PayrollRun[]
   fixedAssets    FixedAsset[]
   budgets        Budget[]
+  cashAccounts     CashAccount[]
+  cashTransactions CashTransaction[]
+  bankAccounts     BankAccount[]
+  bankTransactions BankTransaction[]
+  purchaseRequests PurchaseRequest[]
+  purchaseOrders   PurchaseOrder[]
 }
 
 model Office {
@@ -834,4 +840,131 @@ model BudgetLine {
   budget Budget @relation(fields: [budgetId], references: [id], onDelete: Cascade)
 
   @@index([budgetId])
+}
+
+// ---------------------------------------------------------------------------
+// Cash Management (Module 9)
+// ---------------------------------------------------------------------------
+
+model CashAccount {
+  id           String   @id @default(uuid())
+  companyId    String
+  name         String
+  glAccountCode String  @default("571000")
+  currency     String   @default("XAF")
+  balance      Decimal  @default(0)
+  status       String   @default("ACTIVE") // ACTIVE | CLOSED
+  createdById  String?
+  createdAt    DateTime @default(now())
+
+  company      Company           @relation(fields: [companyId], references: [id])
+  transactions CashTransaction[]
+
+  @@index([companyId])
+}
+
+model CashTransaction {
+  id                    String   @id @default(uuid())
+  companyId             String
+  cashAccountId         String
+  date                  DateTime
+  type                  String // IN | OUT
+  amount                Decimal
+  description           String
+  counterpartAccountCode String
+  runningBalance        Decimal
+  postedEntryId         String?
+  createdById           String?
+  createdAt             DateTime @default(now())
+
+  company     Company     @relation(fields: [companyId], references: [id])
+  cashAccount CashAccount @relation(fields: [cashAccountId], references: [id], onDelete: Cascade)
+
+  @@index([cashAccountId])
+}
+
+// ---------------------------------------------------------------------------
+// Banking (Module 10)
+// ---------------------------------------------------------------------------
+
+model BankAccount {
+  id            String   @id @default(uuid())
+  companyId     String
+  name          String
+  bankName      String?
+  accountNumber String?
+  glAccountCode String   @default("521000")
+  currency      String   @default("XAF")
+  status        String   @default("ACTIVE")
+  createdById   String?
+  createdAt     DateTime @default(now())
+
+  company      Company           @relation(fields: [companyId], references: [id])
+  transactions BankTransaction[]
+
+  @@index([companyId])
+}
+
+model BankTransaction {
+  id                    String   @id @default(uuid())
+  companyId             String
+  bankAccountId         String
+  date                  DateTime
+  type                  String // CHARGE | INTEREST | TRANSFER_IN | TRANSFER_OUT
+  amount                Decimal
+  description           String
+  counterpartAccountCode String
+  reconciled            Boolean  @default(false)
+  postedEntryId         String?
+  createdById           String?
+  createdAt             DateTime @default(now())
+
+  company     Company     @relation(fields: [companyId], references: [id])
+  bankAccount BankAccount @relation(fields: [bankAccountId], references: [id], onDelete: Cascade)
+
+  @@index([bankAccountId])
+}
+
+// ---------------------------------------------------------------------------
+// Procurement (Module 11)
+// ---------------------------------------------------------------------------
+
+model PurchaseRequest {
+  id          String   @id @default(uuid())
+  companyId   String
+  number      String
+  description String
+  amount      Decimal
+  currency    String   @default("XAF")
+  status      String   @default("PENDING") // PENDING | APPROVED | REJECTED | ORDERED
+  decidedById String?
+  decidedAt   DateTime?
+  decisionNote String?
+  createdById String?
+  createdAt   DateTime @default(now())
+
+  company Company         @relation(fields: [companyId], references: [id])
+  orders  PurchaseOrder[]
+
+  @@unique([companyId, number])
+  @@index([companyId])
+}
+
+model PurchaseOrder {
+  id          String   @id @default(uuid())
+  companyId   String
+  requestId   String
+  number      String
+  supplierId  String?
+  amount      Decimal
+  currency    String   @default("XAF")
+  status      String   @default("OPEN") // OPEN | RECEIVED | CLOSED
+  createdById String?
+  createdAt   DateTime @default(now())
+
+  company Company         @relation(fields: [companyId], references: [id])
+  request PurchaseRequest @relation(fields: [requestId], references: [id])
+
+  @@unique([companyId, number])
+  @@index([companyId])
 }
