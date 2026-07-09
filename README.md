@@ -75,6 +75,12 @@ Remaining modules follow the roadmap in [`docs/04-roadmap.md`](docs/04-roadmap.m
 - Fixed Assets screen with register / depreciate / dispose (EN/FR, dark mode); `asset:read` / `asset:manage` / `asset:post` role split.
 - Verified: 1,200,000 over 36 mo → 33,333.33/mo (NBV 1,166,666.67); disposal at 1,190,000 → gain 23,333.33; trial balance ties after both; auditor denied depreciation (403).
 
+**Module 13 — Budgeting**
+- **Annual budgets** by account (revenue/expense) with **live budget-vs-actual variance** pulled from POSTED GL entries for the budget year.
+- Favourable/unfavourable logic per account type (under-budget expense = favourable; under-target revenue = unfavourable), with % used.
+- Budgets screen: create with dynamic account lines + variance view (EN/FR, dark mode); `budget:read` / `budget:manage`.
+- Verified: depreciation actual 33,333.33 vs budget 500,000 (6.67% used, favourable); revenue-under-target flagged unfavourable; cashier denied budget:read (403).
+
 ## Run locally
 
 ```bash

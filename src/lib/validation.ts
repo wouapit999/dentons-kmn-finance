@@ -254,6 +254,22 @@ export const disposeAssetSchema = z.object({
   proceeds: z.number().nonnegative().default(0),
 });
 
+// --- Budgeting ---
+
+export const createBudgetSchema = z.object({
+  name: z.string().min(2).max(120),
+  year: z.number().int().min(2000).max(2100),
+  lines: z
+    .array(
+      z.object({
+        accountCode: z.string().min(3).max(20),
+        annualAmount: z.number().nonnegative(),
+      }),
+    )
+    .min(1, "Add at least one budget line"),
+});
+export type CreateBudgetInput = z.infer<typeof createBudgetSchema>;
+
 export const createEntrySchema = z
   .object({
     journalId: z.string().uuid(),

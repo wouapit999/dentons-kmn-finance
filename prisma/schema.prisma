@@ -51,6 +51,7 @@ model Company {
   employees      Employee[]
   payrollRuns    PayrollRun[]
   fixedAssets    FixedAsset[]
+  budgets        Budget[]
 }
 
 model Office {
@@ -802,4 +803,35 @@ model DepreciationEntry {
   asset FixedAsset @relation(fields: [assetId], references: [id], onDelete: Cascade)
 
   @@index([assetId])
+}
+
+// ---------------------------------------------------------------------------
+// Budgeting (Module 13)
+// ---------------------------------------------------------------------------
+
+model Budget {
+  id          String   @id @default(uuid())
+  companyId   String
+  name        String
+  year        Int
+  status      String   @default("DRAFT") // DRAFT | APPROVED
+  createdById String?
+  createdAt   DateTime @default(now())
+
+  company Company      @relation(fields: [companyId], references: [id])
+  lines   BudgetLine[]
+
+  @@index([companyId])
+}
+
+model BudgetLine {
+  id           String  @id @default(uuid())
+  budgetId     String
+  accountCode  String
+  accountName  String
+  annualAmount Decimal @default(0)
+
+  budget Budget @relation(fields: [budgetId], references: [id], onDelete: Cascade)
+
+  @@index([budgetId])
 }

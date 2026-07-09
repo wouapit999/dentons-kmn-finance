@@ -67,6 +67,10 @@ export const PERMISSIONS = {
   "asset:manage": "Register and dispose of fixed assets",
   "asset:post": "Run and post depreciation",
 
+  // Budgeting
+  "budget:read": "View budgets and variance",
+  "budget:manage": "Create and edit budgets",
+
   // Reporting
   "report:read": "View reports",
   "report:export": "Export reports",
@@ -96,7 +100,7 @@ export const SYSTEM_ROLES: {
       "disbursement:read", "invoice:read", "invoice:approve", "payment:read",
       "payment:approve", "ap:read", "ap:approve", "trust:read", "trust:manage",
       "payroll:read", "payroll:manage", "payroll:post", "asset:read",
-      "report:read", "report:export",
+      "budget:read", "budget:manage", "report:read", "report:export",
     ],
   },
   {
@@ -109,7 +113,7 @@ export const SYSTEM_ROLES: {
       "invoice:approve", "payment:read", "payment:approve", "ap:read", "ap:manage",
       "ap:approve", "trust:read", "trust:manage", "payroll:read", "payroll:manage",
       "payroll:post", "asset:read", "asset:manage", "asset:post",
-      "report:read", "report:export",
+      "budget:read", "budget:manage", "report:read", "report:export",
     ],
   },
   {
@@ -121,7 +125,8 @@ export const SYSTEM_ROLES: {
       "time:read", "disbursement:read", "invoice:read", "invoice:create",
       "invoice:approve", "payment:read", "payment:create", "payment:approve",
       "ap:read", "ap:manage", "ap:approve", "trust:read", "asset:read",
-      "asset:manage", "asset:post", "report:read", "report:export",
+      "asset:manage", "asset:post", "budget:read", "budget:manage",
+      "report:read", "report:export",
     ],
   },
   {
@@ -197,7 +202,7 @@ export const SYSTEM_ROLES: {
     permissions: [
       "gl:read", "client:read", "matter:read", "time:read", "disbursement:read",
       "invoice:read", "payment:read", "ap:read", "trust:read", "payroll:read",
-      "asset:read", "audit:read", "report:read", "report:export",
+      "asset:read", "budget:read", "audit:read", "report:read", "report:export",
     ],
   },
   {
@@ -206,7 +211,8 @@ export const SYSTEM_ROLES: {
     hierarchyLevel: 35,
     permissions: [
       "gl:read", "client:read", "matter:read", "time:read", "disbursement:read",
-      "invoice:read", "payment:read", "ap:read", "asset:read", "report:read",
+      "invoice:read", "payment:read", "ap:read", "asset:read", "budget:read",
+      "report:read",
     ],
   },
 ];
