@@ -11,16 +11,21 @@ import "server-only";
 import Anthropic from "@anthropic-ai/sdk";
 import { AuthError } from "./auth";
 
-const MODEL = process.env.AI_MODEL ?? "claude-sonnet-5";
+// Key/model are resolved per company (in-app setting first, env fallback) via
+// resolveAiConfig() in settings.ts and passed in by the API routes.
+export interface AiConfig {
+  apiKey: string | null;
+  model: string;
+}
 
-export function aiConfigured(): boolean {
+export function aiConfigured(cfg?: AiConfig): boolean {
+  if (cfg) return !!cfg.apiKey;
   return !!process.env.ANTHROPIC_API_KEY;
 }
 
-function client(): Anthropic {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) throw new AuthError(503, "ai_not_configured");
-  return new Anthropic({ apiKey });
+function client(cfg: AiConfig): Anthropic {
+  if (!cfg.apiKey) throw new AuthError(503, "ai_not_configured");
+  return new Anthropic({ apiKey: cfg.apiKey });
 }
 
 function firstText(msg: Anthropic.Messages.Message): string {
@@ -33,8 +38,13 @@ function firstText(msg: Anthropic.Messages.Message): string {
  * snapshot of the company's figures. The snapshot is built server-side so the
  * model only ever sees this tenant's data.
  */
-export async function nlReport(question: string, context: unknown, locale: string): Promise<string> {
-  const c = client();
+export async function nlReport(
+  question: string,
+  context: unknown,
+  locale: string,
+  cfg: AiConfig,
+): Promise<string> {
+  const c = client(cfg);
   const system =
     "You are the finance analyst for Dentons KMN, a law firm in Cameroon. " +
     "Answer ONLY from the JSON financial context provided. Amounts are in XAF unless stated. " +
@@ -42,7 +52,7 @@ export async function nlReport(question: string, context: unknown, locale: strin
     `Reply in ${locale === "fr" ? "French" : "English"}.`;
 
   const msg = await c.messages.create({
-    model: MODEL,
+    model: cfg.model,
     max_tokens: 1024,
     system,
     messages: [
@@ -70,8 +80,12 @@ export interface ExtractedInvoice {
  * OCR/extraction: pull structured fields from an invoice or receipt image/PDF
  * so the AP bill form can be pre-filled. Accepts a base64 payload + mime type.
  */
-export async function extractInvoice(base64: string, mime: string): Promise<ExtractedInvoice> {
-  const c = client();
+export async function extractInvoice(
+  base64: string,
+  mime: string,
+  cfg: AiConfig,
+): Promise<ExtractedInvoice> {
+  const c = client(cfg);
   const isPdf = mime === "application/pdf";
 
   const doc: Anthropic.Messages.ContentBlockParam = isPdf
@@ -88,7 +102,7 @@ export async function extractInvoice(base64: string, mime: string): Promise<Extr
       };
 
   const msg = await c.messages.create({
-    model: MODEL,
+    model: cfg.model,
     max_tokens: 512,
     system:
       "Extract vendor invoice fields. Return ONLY a JSON object with keys: " +

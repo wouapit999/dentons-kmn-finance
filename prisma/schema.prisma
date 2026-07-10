@@ -968,3 +968,19 @@ model PurchaseOrder {
   @@unique([companyId, number])
   @@index([companyId])
 }
+
+// ---------------------------------------------------------------------------
+// Settings (per-company key/value; secret values stored encrypted)
+// ---------------------------------------------------------------------------
+
+model Setting {
+  id        String   @id @default(uuid())
+  companyId String
+  key       String
+  value     String
+  updatedAt DateTime @updatedAt
+  updatedBy String?
+
+  @@unique([companyId, key])
+  @@index([companyId])
+}

@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth";
 import { accountBalances } from "@/lib/reports";
 import { nlReport, aiConfigured } from "@/lib/ai";
+import { resolveAiConfig } from "@/lib/settings";
 import { writeAudit } from "@/lib/audit";
 
 export const dynamic = "force-dynamic";
@@ -62,15 +63,16 @@ export async function POST(req: NextRequest) {
       trustBalances: trust.map((t) => ({ client: t.client.name, balance: Number(t.balance) })),
     };
 
-    if (!aiConfigured()) {
+    const cfg = await resolveAiConfig(user.companyId);
+    if (!aiConfigured(cfg)) {
       return {
         configured: false,
         answer:
-          "AI reporting is not configured. Set the ANTHROPIC_API_KEY environment variable to enable natural-language reporting.",
+          "AI reporting is not configured. Ask your IT Administrator to add an Anthropic API key on the AI Assistant page (or set ANTHROPIC_API_KEY).",
       };
     }
 
-    const answer = await nlReport(question, context, user.locale);
+    const answer = await nlReport(question, context, user.locale, cfg);
     await writeAudit({
       companyId: user.companyId,
       actorId: user.id,

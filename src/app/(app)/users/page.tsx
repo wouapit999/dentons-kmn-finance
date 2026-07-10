@@ -29,9 +29,19 @@ export default function UsersPage() {
   const t = useT();
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
+  const [rolesFor, setRolesFor] = useState<UserRow | null>(null);
+  const [meId, setMeId] = useState<string | null>(null);
 
   const users = useQuery({ queryKey: ["users"], queryFn: () => json<UserRow[]>("/api/users") });
   const roles = useQuery({ queryKey: ["roles"], queryFn: () => json<RoleOption[]>("/api/roles") });
+  useQuery({
+    queryKey: ["me"],
+    queryFn: async () => {
+      const me = await json<{ id: string }>("/api/me");
+      setMeId(me.id);
+      return me;
+    },
+  });
 
   const toggle = useMutation({
     mutationFn: async (u: UserRow) => {
@@ -89,15 +99,22 @@ export default function UsersPage() {
                     {u.status}
                   </Badge>
                 </td>
-                <td className="px-4 py-3 text-right">
-                  <Button
-                    size="sm"
-                    variant={u.status === "DISABLED" ? "outline" : "danger"}
-                    onClick={() => toggle.mutate(u)}
-                    disabled={toggle.isPending}
-                  >
-                    {u.status === "DISABLED" ? t("users.activate") : t("users.deactivate")}
-                  </Button>
+                <td className="px-4 py-3">
+                  <div className="flex justify-end gap-2">
+                    {u.id !== meId && (
+                      <Button size="sm" variant="outline" onClick={() => setRolesFor(u)}>
+                        {t("users.editRoles")}
+                      </Button>
+                    )}
+                    <Button
+                      size="sm"
+                      variant={u.status === "DISABLED" ? "outline" : "danger"}
+                      onClick={() => toggle.mutate(u)}
+                      disabled={toggle.isPending || u.id === meId}
+                    >
+                      {u.status === "DISABLED" ? t("users.activate") : t("users.deactivate")}
+                    </Button>
+                  </div>
                 </td>
               </tr>
             ))}
@@ -111,6 +128,17 @@ export default function UsersPage() {
           onClose={() => setOpen(false)}
           onCreated={() => {
             setOpen(false);
+            qc.invalidateQueries({ queryKey: ["users"] });
+          }}
+        />
+      )}
+      {rolesFor && (
+        <EditRolesDialog
+          user={rolesFor}
+          roles={roles.data ?? []}
+          onClose={() => setRolesFor(null)}
+          onSaved={() => {
+            setRolesFor(null);
             qc.invalidateQueries({ queryKey: ["users"] });
           }}
         />
@@ -195,6 +223,85 @@ function NewUserDialog({
             <Button type="submit">{t("common.create")}</Button>
           </div>
         </form>
+      </Card>
+    </div>
+  );
+}
+
+function EditRolesDialog({
+  user,
+  roles,
+  onClose,
+  onSaved,
+}: {
+  user: UserRow;
+  roles: RoleOption[];
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const t = useT();
+  // Pre-select the user's current roles (match by role key).
+  const currentKeys = new Set(user.roles.map((r) => r.key));
+  const [selected, setSelected] = useState<string[]>(
+    roles.filter((r) => currentKeys.has(r.key)).map((r) => r.id),
+  );
+  const [error, setError] = useState<string | null>(null);
+
+  const save = useMutation({
+    mutationFn: async () => {
+      const res = await fetch(`/api/users/${user.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ roleIds: selected }),
+      });
+      if (!res.ok) {
+        const b = await res.json().catch(() => ({}));
+        throw new Error(b.error || "failed");
+      }
+    },
+    onSuccess: onSaved,
+    onError: (e: Error) =>
+      setError(e.message === "cannot_edit_own_roles" ? t("users.ownRoles") : e.message),
+  });
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+      <Card className="w-full max-w-lg p-6">
+        <h2 className="mb-1 text-lg font-semibold">{t("users.editRolesTitle")}</h2>
+        <p className="mb-4 text-sm text-slate-500">
+          {user.fullName} · {user.email}
+        </p>
+        <div className="grid grid-cols-2 gap-1">
+          {roles.map((r) => (
+            <label key={r.id} className="flex items-center gap-2 py-1 text-sm">
+              <input
+                type="checkbox"
+                checked={selected.includes(r.id)}
+                onChange={(e) =>
+                  setSelected((s) =>
+                    e.target.checked ? [...s, r.id] : s.filter((x) => x !== r.id),
+                  )
+                }
+              />
+              {r.name}
+            </label>
+          ))}
+        </div>
+        {selected.length === 0 && (
+          <p className="mt-2 text-sm text-amber-600">{t("users.minOneRole")}</p>
+        )}
+        {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
+        <div className="mt-4 flex justify-end gap-2">
+          <Button variant="outline" onClick={onClose}>
+            {t("common.cancel")}
+          </Button>
+          <Button
+            disabled={selected.length === 0 || save.isPending}
+            onClick={() => save.mutate()}
+          >
+            {t("common.save")}
+          </Button>
+        </div>
       </Card>
     </div>
   );

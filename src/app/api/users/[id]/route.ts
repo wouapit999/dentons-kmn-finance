@@ -21,6 +21,12 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     const existing = await loadScoped(admin.companyId, params.id);
     const input = updateUserSchema.parse(await req.json());
 
+    // Lockout protection: an admin cannot change their own roles (they could
+    // strip user:manage and lose access to user administration entirely).
+    if (input.roleIds && existing.id === admin.id) {
+      throw new AuthError(400, "cannot_edit_own_roles");
+    }
+
     const before = {
       status: existing.status,
       locale: existing.locale,
