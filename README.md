@@ -158,6 +158,10 @@ Put it behind HTTPS (NGINX / your platform's TLS). The session cookie is `Secure
 > PostgreSQL (change the `datasource` provider in `prisma/schema.prisma`). All status fields
 > are portable strings, so no schema rewrite is needed.
 
+## Guide
+
+A slide-based **Administrator & User Guide** is in [`docs/Dentons-KMN-Finance-Guide.pptx`](docs/Dentons-KMN-Finance-Guide.pptx).
+
 ## Documentation
 
 Full architecture, data model, security design, and the module roadmap live in [`docs/`](docs/).
