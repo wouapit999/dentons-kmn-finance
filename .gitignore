@@ -33,5 +33,6 @@ yarn-error.log*
 !.vscode/extensions.json
 .idea
 
-# os
+# os / office lock files
 Thumbs.db
+~$*
