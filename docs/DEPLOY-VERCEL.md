@@ -26,6 +26,8 @@ Any of these work (all have free tiers):
 | `DB_PROVIDER` | `postgresql` |
 | `DATABASE_URL` | your Postgres connection string (Vercel Postgres injects this automatically) |
 | `AUTH_SECRET` | a strong random string — generate with `openssl rand -base64 48` |
+| `ANTHROPIC_API_KEY` | *(optional)* enables the AI Assistant (NL reporting + invoice OCR). Get one at console.anthropic.com |
+| `AI_MODEL` | *(optional)* defaults to `claude-sonnet-5` |
 
 > If you used **Vercel Postgres**, `DATABASE_URL` (and `POSTGRES_*`) are added for you;
 > you still need to add `DB_PROVIDER=postgresql` and `AUTH_SECRET`.
