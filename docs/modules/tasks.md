@@ -464,11 +464,12 @@ first module without one). i18n keys under `tasks.*` in both EN and FR from day 
 
 ## 7. Automation (Vercel Cron)
 
-`vercel.json`:
+`vercel.json` (Hobby plan allows one daily cron; the daily run does everything —
+reminders, overdue, recurrence, digest — since each step is idempotent/deduped.
+On Pro, raise the frequency, e.g. `*/15 * * * *`):
 
 ```json
-{ "crons": [{ "path": "/api/cron/tasks", "schedule": "*/15 * * * *" },
-            { "path": "/api/cron/tasks?job=daily", "schedule": "0 6 * * *" }] }
+{ "crons": [{ "path": "/api/cron/tasks", "schedule": "0 6 * * *" }] }
 ```
 
 `GET /api/cron/tasks` (Bearer `CRON_SECRET`), each step idempotent:

@@ -111,8 +111,10 @@ export async function GET(req: NextRequest) {
     result.recurred += 1;
   }
 
-  // 4) Daily digest (?job=daily) — one summary per user with open tasks.
-  if (req.nextUrl.searchParams.get("job") === "daily") {
+  // 4) Daily digest — one summary per user with open tasks. Deduplicated per
+  // day, so it is safe to run on every cron invocation (Hobby plan = 1/day;
+  // on Pro you can raise the schedule frequency in vercel.json).
+  {
     const open = await prisma.task.findMany({
       where: { deletedAt: null, status: { notIn: ["COMPLETED", "ARCHIVED"] } },
       include: { assignments: true },
