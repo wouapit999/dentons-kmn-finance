@@ -36,3 +36,7 @@ yarn-error.log*
 # os / office lock files
 Thumbs.db
 ~$*
+
+.vercel
+.env*
+!.env.example
