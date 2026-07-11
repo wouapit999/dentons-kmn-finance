@@ -1,6 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
-import { PERMISSIONS, SYSTEM_ROLES } from "../src/lib/constants";
+import { PERMISSIONS, SYSTEM_ROLES, TASK_CATEGORIES } from "../src/lib/constants";
 import { CHART_OF_ACCOUNTS, JOURNALS } from "../src/lib/coa";
 
 const prisma = new PrismaClient();
@@ -320,6 +320,103 @@ async function main() {
     });
   }
   console.log(`Employees seeded: ${employeeSeed.length}.`);
+
+  // 10) Tasks module: categories + sample tasks + a recurring rule
+  const catId: Record<string, string> = {};
+  for (const c of TASK_CATEGORIES) {
+    const cat = await prisma.taskCategory.upsert({
+      where: { companyId_key: { companyId: company.id, key: c.key } },
+      update: { name: c.name, isCourtDeadline: !!c.isCourtDeadline, isBillable: !!c.isBillable },
+      create: {
+        companyId: company.id,
+        key: c.key,
+        name: c.name,
+        isCourtDeadline: !!c.isCourtDeadline,
+        isBillable: !!c.isBillable,
+      },
+    });
+    catId[c.key] = cat.id;
+  }
+
+  const taskA = await prisma.task.upsert({
+    where: { id: "00000000-0000-0000-0000-00000000ta01" },
+    update: {},
+    create: {
+      id: "00000000-0000-0000-0000-00000000ta01",
+      companyId: company.id,
+      title: "Draft Series B share subscription agreement",
+      categoryId: catId["DRAFTING"],
+      priority: "HIGH",
+      status: "IN_PROGRESS",
+      visibility: "MATTER",
+      matterId: matter1.id,
+      dueDate: new Date(Date.now() + 5 * 86_400_000),
+      billable: true,
+      estimatedMin: 480,
+      createdById: cfo.id,
+      assignments: { create: [{ userId: cfo.id, assignedById: cfo.id }] },
+    },
+  });
+  const taskB = await prisma.task.upsert({
+    where: { id: "00000000-0000-0000-0000-00000000ta02" },
+    update: {},
+    create: {
+      id: "00000000-0000-0000-0000-00000000ta02",
+      companyId: company.id,
+      title: "File subscription agreement with the court registry",
+      categoryId: catId["COURT_FILING"],
+      priority: "CRITICAL", // court deadline
+      status: "ASSIGNED",
+      visibility: "MATTER",
+      matterId: matter1.id,
+      dueDate: new Date(Date.now() + 10 * 86_400_000),
+      billable: true,
+      createdById: cfo.id,
+      assignments: { create: [{ userId: cfo.id, assignedById: cfo.id }] },
+    },
+  });
+  await prisma.taskDependency.upsert({
+    where: { taskId_dependsOnId: { taskId: taskB.id, dependsOnId: taskA.id } },
+    update: {},
+    create: { taskId: taskB.id, dependsOnId: taskA.id },
+  });
+  await prisma.task.upsert({
+    where: { id: "00000000-0000-0000-0000-00000000ta03" },
+    update: {},
+    create: {
+      id: "00000000-0000-0000-0000-00000000ta03",
+      companyId: company.id,
+      title: "Collect signed engagement letter",
+      categoryId: catId["FOLLOW_UP"],
+      priority: "MEDIUM",
+      status: "ASSIGNED",
+      visibility: "PUBLIC",
+      clientId: acme.id,
+      dueDate: new Date(Date.now() - 2 * 86_400_000), // overdue on purpose
+      createdById: admin.id,
+      assignments: { create: [{ userId: admin.id, assignedById: admin.id }] },
+    },
+  });
+  await prisma.recurringTaskRule.upsert({
+    where: { id: "00000000-0000-0000-0000-00000000tr01" },
+    update: {},
+    create: {
+      id: "00000000-0000-0000-0000-00000000tr01",
+      companyId: company.id,
+      title: "Prepare monthly VAT return",
+      categoryId: catId["COMPLIANCE"],
+      priority: "HIGH",
+      assigneeIds: JSON.stringify([cfo.id]),
+      visibility: "PUBLIC",
+      frequency: "MONTHLY",
+      interval: 1,
+      dayOfMonth: 10,
+      dueOffsetDays: 5,
+      nextRunAt: new Date(),
+      createdById: cfo.id,
+    },
+  });
+  console.log(`Tasks seeded: ${TASK_CATEGORIES.length} categories, 3 tasks, 1 recurring rule.`);
 
   console.log("\nSeed complete. Sign in with:");
   console.log("  IT Admin : admin@dentonskmn.local / ChangeMe123!");

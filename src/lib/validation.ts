@@ -328,3 +328,87 @@ export const createEntrySchema = z
     { message: "Entry is not balanced (total debits must equal total credits)" },
   );
 export type CreateEntryInput = z.infer<typeof createEntrySchema>;
+
+// --- Tasks ---
+
+import {
+  TASK_PRIORITIES,
+  TASK_STATUSES,
+  TASK_VISIBILITY,
+} from "./constants";
+
+export const createTaskSchema = z.object({
+  title: z.string().min(2).max(200),
+  description: z.string().max(4000).optional().or(z.literal("")),
+  categoryKey: z.string().max(40).optional().or(z.literal("")),
+  priority: z.enum(TASK_PRIORITIES).default("MEDIUM"),
+  visibility: z.enum(TASK_VISIBILITY).default("PUBLIC"),
+  matterId: z.string().uuid().optional().or(z.literal("")),
+  clientId: z.string().uuid().optional().or(z.literal("")),
+  parentId: z.string().uuid().optional().or(z.literal("")),
+  dueDate: z.string().optional().or(z.literal("")),
+  assigneeIds: z.array(z.string().uuid()).default([]),
+  dependsOnIds: z.array(z.string().uuid()).default([]),
+  billable: z.boolean().optional(),
+  estimatedMin: z.number().int().positive().max(100000).optional(),
+});
+export type CreateTaskInput = z.infer<typeof createTaskSchema>;
+
+export const updateTaskSchema = z.object({
+  title: z.string().min(2).max(200).optional(),
+  description: z.string().max(4000).optional(),
+  priority: z.enum(TASK_PRIORITIES).optional(),
+  visibility: z.enum(TASK_VISIBILITY).optional(),
+  status: z.enum(TASK_STATUSES).optional(),
+  dueDate: z.string().nullable().optional(),
+  billable: z.boolean().optional(),
+  estimatedMin: z.number().int().positive().max(100000).nullable().optional(),
+});
+export type UpdateTaskInput = z.infer<typeof updateTaskSchema>;
+
+export const assignTaskSchema = z.object({
+  userIds: z.array(z.string().uuid()).min(1),
+});
+
+export const taskCommentSchema = z.object({
+  body: z.string().min(1).max(4000),
+});
+
+export const taskDependencySchema = z.object({
+  dependsOnId: z.string().uuid(),
+});
+
+export const taskReminderSchema = z.object({
+  remindAt: z.string(),
+  channel: z.enum(["IN_APP", "EMAIL", "SMS"]).default("IN_APP"),
+});
+
+export const taskLogTimeSchema = z.object({
+  minutes: z.number().int().positive().max(1440),
+});
+
+// Attachment: base64 payload capped at ~2 MB (2_800_000 base64 chars).
+export const taskAttachmentSchema = z.object({
+  filename: z.string().min(1).max(200),
+  mime: z.string().min(3).max(100),
+  base64: z.string().min(4).max(2_800_000),
+});
+
+export const recurringRuleSchema = z.object({
+  title: z.string().min(2).max(200),
+  description: z.string().max(2000).optional().or(z.literal("")),
+  categoryKey: z.string().max(40).optional().or(z.literal("")),
+  priority: z.enum(TASK_PRIORITIES).default("MEDIUM"),
+  matterId: z.string().uuid().optional().or(z.literal("")),
+  clientId: z.string().uuid().optional().or(z.literal("")),
+  assigneeIds: z.array(z.string().uuid()).default([]),
+  visibility: z.enum(TASK_VISIBILITY).default("PUBLIC"),
+  frequency: z.enum(["DAILY", "WEEKLY", "MONTHLY", "YEARLY"]),
+  interval: z.number().int().positive().max(52).default(1),
+  dayOfWeek: z.number().int().min(0).max(6).optional(),
+  dayOfMonth: z.number().int().min(1).max(31).optional(),
+  dueOffsetDays: z.number().int().min(0).max(365).default(0),
+  startsAt: z.string().optional().or(z.literal("")),
+  endsAt: z.string().optional().or(z.literal("")),
+});
+export type RecurringRuleInput = z.infer<typeof recurringRuleSchema>;

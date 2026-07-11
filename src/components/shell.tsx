@@ -28,6 +28,7 @@ import {
   ShoppingCart,
   Sparkles,
   Bot,
+  ListTodo,
   LogOut,
   Moon,
   Sun,
@@ -35,6 +36,7 @@ import {
 import { useT } from "@/lib/useT";
 import { useUi } from "@/lib/store";
 import { cn, Button } from "@/components/ui";
+import { NotificationsBell } from "@/components/notifications-bell";
 import type { MessageKey } from "@/lib/i18n";
 import type { Locale } from "@/lib/constants";
 
@@ -57,6 +59,7 @@ export function Shell({ children, user }: ShellProps) {
 
   const nav: { href: string; label: MessageKey; icon: React.ReactNode; perm?: string }[] = [
     { href: "/dashboard", label: "nav.dashboard", icon: <LayoutDashboard size={18} /> },
+    { href: "/tasks", label: "nav.tasks", icon: <ListTodo size={18} /> }, // all users
     { href: "/clients", label: "nav.clients", icon: <Briefcase size={18} />, perm: "client:read" },
     { href: "/matters", label: "nav.matters", icon: <FolderKanban size={18} />, perm: "matter:read" },
     { href: "/time", label: "nav.time", icon: <Clock size={18} />, perm: "time:read" },
@@ -107,7 +110,7 @@ export function Shell({ children, user }: ShellProps) {
           </div>
           <div className="text-sm font-semibold leading-tight">Dentons KMN<br /><span className="text-xs font-normal text-slate-500">Finance</span></div>
         </div>
-        <nav className="flex-1 space-y-1 px-3 py-2">
+        <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-2">
           {nav
             .filter((n) => !n.perm || user.permissions.includes(n.perm))
             .map((n) => (
@@ -139,6 +142,7 @@ export function Shell({ children, user }: ShellProps) {
 
       <div className="flex flex-1 flex-col">
         <header className="flex h-14 items-center justify-end gap-3 border-b border-slate-200 bg-white px-6 dark:border-slate-800 dark:bg-slate-900">
+          <NotificationsBell />
           <div className="flex items-center gap-1 text-xs">
             <button
               onClick={() => changeLanguage("en")}

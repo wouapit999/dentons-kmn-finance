@@ -10,6 +10,37 @@ export type Locale = (typeof LOCALES)[number];
 // Cameroon standard VAT (TVA) rate, including the additional council tax.
 export const CAMEROON_VAT_RATE = 19.25;
 
+// --- Tasks module ---
+export const TASK_PRIORITIES = ["LOW", "MEDIUM", "HIGH", "CRITICAL"] as const;
+export const TASK_STATUSES = [
+  "DRAFT", "ASSIGNED", "IN_PROGRESS", "WAITING", "COMPLETED", "ARCHIVED",
+] as const;
+export const TASK_VISIBILITY = ["PRIVATE", "MATTER", "PUBLIC"] as const;
+
+// Legal status transitions, enforced server-side.
+export const TASK_TRANSITIONS: Record<string, string[]> = {
+  DRAFT: ["ASSIGNED", "IN_PROGRESS", "ARCHIVED"],
+  ASSIGNED: ["IN_PROGRESS", "WAITING", "ARCHIVED"],
+  IN_PROGRESS: ["WAITING", "COMPLETED", "ARCHIVED"],
+  WAITING: ["IN_PROGRESS", "COMPLETED", "ARCHIVED"],
+  COMPLETED: ["ARCHIVED", "IN_PROGRESS"], // reopen allowed
+  ARCHIVED: [],
+};
+
+export const TASK_CATEGORIES: {
+  key: string; name: string; isCourtDeadline?: boolean; isBillable?: boolean;
+}[] = [
+  { key: "ADMINISTRATIVE", name: "Administrative" },
+  { key: "LEGAL_WORK", name: "Legal Work", isBillable: true },
+  { key: "COURT_FILING", name: "Court Filing", isCourtDeadline: true, isBillable: true },
+  { key: "RESEARCH", name: "Research", isBillable: true },
+  { key: "CLIENT_COMM", name: "Client Communication", isBillable: true },
+  { key: "BILLING", name: "Billing-related" },
+  { key: "COMPLIANCE", name: "Compliance" },
+  { key: "DRAFTING", name: "Document Drafting", isBillable: true },
+  { key: "FOLLOW_UP", name: "Follow-ups" },
+];
+
 // Permission taxonomy: resource:action.
 // This is the source of truth; the seed inserts exactly these.
 export const PERMISSIONS = {
@@ -85,6 +116,9 @@ export const PERMISSIONS = {
   "budget:read": "View budgets and variance",
   "budget:manage": "Create and edit budgets",
 
+  // Tasks (basic task use needs no permission — any authenticated user)
+  "task:admin": "See, reassign and manage all tasks",
+
   // Reporting
   "report:read": "View reports",
   "report:export": "Export reports",
@@ -115,7 +149,7 @@ export const SYSTEM_ROLES: {
       "payment:approve", "ap:read", "ap:approve", "trust:read", "trust:manage",
       "payroll:read", "payroll:manage", "payroll:post", "asset:read",
       "budget:read", "budget:manage", "cash:read", "bank:read",
-      "procure:read", "procure:approve", "report:read", "report:export",
+      "procure:read", "procure:approve", "task:admin", "report:read", "report:export",
     ],
   },
   {
@@ -214,7 +248,7 @@ export const SYSTEM_ROLES: {
     hierarchyLevel: 15,
     permissions: [
       "user:read", "user:manage", "user:reset_password", "role:read",
-      "role:manage", "audit:read",
+      "role:manage", "task:admin", "audit:read",
     ],
   },
   {
