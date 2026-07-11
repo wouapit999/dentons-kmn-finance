@@ -36,6 +36,11 @@ export default function ClientsPage() {
       return (await res.json()) as Client[];
     },
   });
+  const me = useQuery({
+    queryKey: ["me"],
+    queryFn: async () => (await fetch("/api/me")).json() as Promise<{ permissions: string[] }>,
+  });
+  const canManage = me.data?.permissions.includes("client:manage") ?? false;
 
   return (
     <div className="space-y-6">
@@ -44,7 +49,7 @@ export default function ClientsPage() {
           <h1 className="text-2xl font-semibold">{t("clients.title")}</h1>
           <p className="text-sm text-slate-500">{t("clients.subtitle")}</p>
         </div>
-        <Button onClick={() => setOpen(true)}>+ {t("clients.new")}</Button>
+        {canManage && <Button onClick={() => setOpen(true)}>+ {t("clients.new")}</Button>}
       </div>
 
       <Card className="overflow-hidden">
@@ -110,10 +115,15 @@ function NewClientDialog({ onClose, onCreated }: { onClose: () => void; onCreate
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
-      if (!res.ok) throw new Error();
+      if (!res.ok) {
+        const b = await res.json().catch(() => ({}));
+        if (res.status === 403) throw new Error("You don't have permission to create clients (needs a Partner or CFO role).");
+        if (res.status === 422) throw new Error("Please check the fields (name, valid email).");
+        throw new Error(b.error || "Could not create client.");
+      }
     },
     onSuccess: onCreated,
-    onError: () => setError("Could not create client."),
+    onError: (e: Error) => setError(e.message),
   });
 
   return (

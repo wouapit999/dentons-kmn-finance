@@ -194,7 +194,8 @@ export const SYSTEM_ROLES: {
     hierarchyLevel: 20,
     permissions: [
       "user:read", "audit:read", "gl:read", "gl:post", "gl:manage", "client:read",
-      "matter:read", "time:read", "disbursement:read", "invoice:read",
+      "client:manage", "matter:read", "matter:manage", "time:read",
+      "disbursement:read", "invoice:read",
       "invoice:approve", "payment:read", "payment:approve", "ap:read", "ap:manage",
       "ap:approve", "trust:read", "trust:manage", "payroll:read", "payroll:manage",
       "payroll:post", "asset:read", "asset:manage", "asset:post",
