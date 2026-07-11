@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button, Input, Card, Badge } from "@/components/ui";
@@ -34,24 +35,6 @@ export default function ClientsPage() {
       if (!res.ok) throw new Error();
       return (await res.json()) as Client[];
     },
-  });
-
-  const verify = useMutation({
-    mutationFn: async (id: string) => {
-      await fetch(`/api/clients/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ kycStatus: "VERIFIED" }),
-      });
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["clients"] }),
-  });
-
-  const conflict = useMutation({
-    mutationFn: async (id: string) => {
-      await fetch(`/api/clients/${id}/conflict-check`, { method: "POST" });
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["clients"] }),
   });
 
   return (
@@ -91,18 +74,10 @@ export default function ClientsPage() {
                 <td className="px-4 py-2.5"><Badge color={amlColor(c.amlRisk)}>{c.amlRisk}</Badge></td>
                 <td className="px-4 py-2.5"><Badge color={conflictColor(c.conflictStatus)}>{c.conflictStatus}</Badge></td>
                 <td className="px-4 py-2.5 text-slate-500">{c.matters}</td>
-                <td className="px-4 py-2.5">
-                  <div className="flex justify-end gap-2">
-                    <Button size="sm" variant="outline" disabled={conflict.isPending}
-                      onClick={() => conflict.mutate(c.id)}>
-                      {t("clients.runConflict")}
-                    </Button>
-                    {c.kycStatus !== "VERIFIED" && (
-                      <Button size="sm" disabled={verify.isPending} onClick={() => verify.mutate(c.id)}>
-                        {t("clients.verify")}
-                      </Button>
-                    )}
-                  </div>
+                <td className="px-4 py-2.5 text-right">
+                  <Link href={`/clients/${c.id}`}>
+                    <Button size="sm" variant="outline">{t("clients.openFile")}</Button>
+                  </Link>
                 </td>
               </tr>
             ))}

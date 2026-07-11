@@ -412,3 +412,28 @@ export const recurringRuleSchema = z.object({
   endsAt: z.string().optional().or(z.literal("")),
 });
 export type RecurringRuleInput = z.infer<typeof recurringRuleSchema>;
+
+// --- Client compliance & documents ---
+
+export const conflictQuestionnaireSchema = z.object({
+  answers: z
+    .array(
+      z.object({
+        key: z.string().min(1).max(60),
+        answer: z.boolean(),
+        details: z.string().max(1000).optional().or(z.literal("")),
+      }),
+    )
+    .min(1),
+  notes: z.string().max(2000).optional().or(z.literal("")),
+});
+export type ConflictQuestionnaireInput = z.infer<typeof conflictQuestionnaireSchema>;
+
+export const clientDocumentSchema = z.object({
+  kind: z.enum(["IDENTITY", "REFERENCE", "CONTRACT", "KYC_REPORT", "CONFLICT_REPORT", "OTHER"]),
+  filename: z.string().min(1).max(200),
+  mime: z.string().min(3).max(100),
+  base64: z.string().min(4).max(2_800_000),
+  notes: z.string().max(500).optional().or(z.literal("")),
+});
+export type ClientDocumentInput = z.infer<typeof clientDocumentSchema>;

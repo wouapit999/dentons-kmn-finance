@@ -10,6 +10,42 @@ export type Locale = (typeof LOCALES)[number];
 // Cameroon standard VAT (TVA) rate, including the additional council tax.
 export const CAMEROON_VAT_RATE = 19.25;
 
+// --- Client compliance ---
+
+// Standard law-firm conflict-of-interest checklist. A "yes" on any question
+// flags the check as POTENTIAL for partner review.
+export const CONFLICT_QUESTIONS: { key: string; en: string; fr: string }[] = [
+  {
+    key: "adverse_prior",
+    en: "Has the firm previously acted for a party adverse to this client?",
+    fr: "Le cabinet a-t-il déjà agi pour une partie adverse à ce client ?",
+  },
+  {
+    key: "adverse_current",
+    en: "Is this client adverse to any existing client of the firm?",
+    fr: "Ce client est-il en litige avec un client actuel du cabinet ?",
+  },
+  {
+    key: "personal_interest",
+    en: "Does any lawyer or staff member have a personal or financial interest in this client or its affairs?",
+    fr: "Un avocat ou membre du personnel a-t-il un intérêt personnel ou financier dans ce client ou ses affaires ?",
+  },
+  {
+    key: "related_parties",
+    en: "Do related parties (subsidiaries, affiliates, directors) create a potential conflict?",
+    fr: "Des parties liées (filiales, sociétés affiliées, dirigeants) créent-elles un conflit potentiel ?",
+  },
+  {
+    key: "confidential_info",
+    en: "Has the firm received confidential information from an adverse party relevant to this client?",
+    fr: "Le cabinet a-t-il reçu des informations confidentielles d'une partie adverse concernant ce client ?",
+  },
+];
+
+export const CLIENT_DOC_KINDS = [
+  "IDENTITY", "REFERENCE", "CONTRACT", "KYC_REPORT", "CONFLICT_REPORT", "OTHER",
+] as const;
+
 // --- Tasks module ---
 export const TASK_PRIORITIES = ["LOW", "MEDIUM", "HIGH", "CRITICAL"] as const;
 export const TASK_STATUSES = [

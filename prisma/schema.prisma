@@ -400,7 +400,30 @@ model Client {
   receipts       Receipt[]
   trustAccounts  TrustAccount[]
   tasks          Task[]
+  documents      ClientDocument[]
 
+  @@index([companyId])
+}
+
+// Client file storage: scanned IDs, references, contracts, and generated
+// KYC / conflict reports. Small files inline (base64, ~2 MB cap) — works on
+// SQLite and Postgres alike. Write: client:manage; read: client:read.
+model ClientDocument {
+  id         String   @id @default(uuid())
+  companyId  String
+  clientId   String
+  kind       String // IDENTITY | REFERENCE | CONTRACT | KYC_REPORT | CONFLICT_REPORT | OTHER
+  filename   String
+  mime       String
+  sizeBytes  Int
+  data       String
+  notes      String?
+  uploadedBy String
+  createdAt  DateTime @default(now())
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([clientId])
   @@index([companyId])
 }
 
@@ -433,14 +456,15 @@ model Matter {
 }
 
 model ConflictCheck {
-  id          String   @id @default(uuid())
-  companyId   String
-  clientId    String
-  status      String // CLEAR | POTENTIAL | BLOCKED
-  matches     String? // JSON list of matched names
-  notes       String?
-  checkedById String?
-  createdAt   DateTime @default(now())
+  id            String   @id @default(uuid())
+  companyId     String
+  clientId      String
+  status        String // CLEAR | POTENTIAL | BLOCKED
+  matches       String? // JSON list of matched names
+  questionnaire String? // JSON: answers to the conflict checklist
+  notes         String?
+  checkedById   String?
+  createdAt     DateTime @default(now())
 
   company Company @relation(fields: [companyId], references: [id])
   client  Client  @relation(fields: [clientId], references: [id], onDelete: Cascade)

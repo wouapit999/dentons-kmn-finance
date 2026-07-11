@@ -65,6 +65,51 @@ export async function nlReport(
   return firstText(msg);
 }
 
+/**
+ * KYC/AML internet screening via Claude's web-search tool: sanctions and
+ * adverse-media mentions, business registrations, litigation footprint.
+ * Returns a markdown report ending with a parseable "RISK_LEVEL:" line.
+ */
+export async function kycScreen(
+  subject: { name: string; type: string; taxId?: string | null; email?: string | null; country: string },
+  cfg: AiConfig,
+): Promise<{ report: string; riskLevel: "LOW" | "MEDIUM" | "HIGH" }> {
+  const c = client(cfg);
+  const msg = await c.messages.create({
+    model: cfg.model,
+    max_tokens: 2500,
+    // Server-side web search tool — the model searches the public internet.
+    tools: [{ type: "web_search_20250305", name: "web_search", max_uses: 6 } as never],
+    system:
+      "You are a KYC/AML due-diligence analyst for Dentons KMN, a law firm in Cameroon. " +
+      "Screen the subject using web search: (1) identity & business registrations, " +
+      "(2) sanctions lists / PEP indications, (3) adverse media (fraud, corruption, money laundering, litigation), " +
+      "(4) overall reputation. Write a concise markdown report with sections: Identity, " +
+      "Sanctions & PEP, Adverse Media, Business Footprint, Sources (URLs), Risk Assessment. " +
+      "Be factual; if nothing is found, say so — absence of findings is a valid result. " +
+      "END the report with exactly one line: RISK_LEVEL: LOW or RISK_LEVEL: MEDIUM or RISK_LEVEL: HIGH.",
+    messages: [
+      {
+        role: "user",
+        content:
+          `Screen this prospective client:\n` +
+          `Name: ${subject.name}\nType: ${subject.type}\nCountry: ${subject.country}` +
+          (subject.taxId ? `\nTax ID: ${subject.taxId}` : "") +
+          (subject.email ? `\nEmail domain: ${subject.email.split("@")[1] ?? ""}` : ""),
+      },
+    ],
+  });
+
+  const report = msg.content
+    .filter((b): b is Anthropic.Messages.TextBlock => b.type === "text")
+    .map((b) => b.text)
+    .join("\n")
+    .trim();
+  const m = report.match(/RISK_LEVEL:\s*(LOW|MEDIUM|HIGH)/i);
+  const riskLevel = (m ? m[1].toUpperCase() : "MEDIUM") as "LOW" | "MEDIUM" | "HIGH";
+  return { report, riskLevel };
+}
+
 export interface ExtractedInvoice {
   supplierName: string | null;
   invoiceNumber: string | null;
