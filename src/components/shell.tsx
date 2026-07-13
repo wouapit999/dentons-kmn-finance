@@ -39,6 +39,7 @@ import { useT } from "@/lib/useT";
 import { useUi } from "@/lib/store";
 import { cn, Button } from "@/components/ui";
 import { NotificationsBell } from "@/components/notifications-bell";
+import { Pinto } from "@/components/pinto";
 import type { MessageKey } from "@/lib/i18n";
 import type { Locale } from "@/lib/constants";
 
@@ -167,6 +168,7 @@ export function Shell({ children, user }: ShellProps) {
         </header>
         <main className="flex-1 overflow-auto p-6">{children}</main>
       </div>
+      <Pinto />
     </div>
   );
 }
