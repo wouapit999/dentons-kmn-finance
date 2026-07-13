@@ -2,7 +2,9 @@
 // Local dev defaults to sqlite; Vercel/production sets DB_PROVIDER=postgresql.
 import { readFileSync, writeFileSync } from "node:fs";
 
-const provider = process.env.DB_PROVIDER || "sqlite";
+// Strip a possible BOM/whitespace (env values piped from some shells prepend a
+// U+FEFF byte-order mark) before matching.
+const provider = (process.env.DB_PROVIDER || "sqlite").replace(/[﻿\s]/g, "");
 if (!["sqlite", "postgresql"].includes(provider)) {
   console.error(`Unsupported DB_PROVIDER: ${provider}`);
   process.exit(1);
