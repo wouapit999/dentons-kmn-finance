@@ -72,7 +72,13 @@ export async function POST(req: NextRequest) {
       };
     }
 
-    const answer = await nlReport(question, context, user.locale, cfg);
+    let answer: string;
+    try {
+      answer = await nlReport(question, context, user.locale, cfg);
+    } catch (e) {
+      const detail = (e as { message?: string })?.message ?? "unknown error";
+      return { configured: true, answer: `The AI service returned an error: ${detail}` };
+    }
     await writeAudit({
       companyId: user.companyId,
       actorId: user.id,

@@ -78,9 +78,15 @@ export async function resolveAiConfig(
     getSetting(companyId, SETTING_KEYS.aiApiKey),
     getSetting(companyId, SETTING_KEYS.aiModel),
   ]);
-  const model = dbModel || process.env.AI_MODEL || "claude-sonnet-5";
-  if (dbKey) return { apiKey: dbKey, model, source: "settings" };
-  if (process.env.ANTHROPIC_API_KEY) return { apiKey: process.env.ANTHROPIC_API_KEY, model, source: "env" };
+  // Strip a possible BOM / stray whitespace (shells prepend U+FEFF when a value
+  // is piped into `vercel env add`), which would otherwise make Anthropic reject
+  // the key or model id.
+  const clean = (v: string | null | undefined) => (v ? v.replace(/^﻿/, "").trim() : "");
+  const model = clean(dbModel) || clean(process.env.AI_MODEL) || "claude-sonnet-5";
+  const settingsKey = clean(dbKey);
+  const envKey = clean(process.env.ANTHROPIC_API_KEY);
+  if (settingsKey) return { apiKey: settingsKey, model, source: "settings" };
+  if (envKey) return { apiKey: envKey, model, source: "env" };
   return { apiKey: null, model, source: "none" };
 }
 

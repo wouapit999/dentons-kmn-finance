@@ -54,13 +54,20 @@ export async function POST(req: NextRequest) {
       prisma.notification.count({ where: { userId: user.id, readAt: null } }),
     ]);
 
-    const reply = await chatPinto(cfg, messages, {
-      fullName: user.fullName,
-      roleKeys: user.roleKeys,
-      permissions: Array.from(user.permissions),
-      locale: user.locale,
-      snapshot: { openTasks, overdueTasks, unreadNotifications: unread },
-    });
-    return { configured: true, reply };
+    try {
+      const reply = await chatPinto(cfg, messages, {
+        fullName: user.fullName,
+        roleKeys: user.roleKeys,
+        permissions: Array.from(user.permissions),
+        locale: user.locale,
+        snapshot: { openTasks, overdueTasks, unreadNotifications: unread },
+      });
+      return { configured: true, reply };
+    } catch (e) {
+      // Surface the provider error (invalid key, model not found, no credits…)
+      // as a chat reply instead of a blank 500.
+      const detail = (e as { message?: string })?.message ?? "unknown error";
+      return { configured: true, reply: `Pinto couldn't reach the AI service: ${detail}` };
+    }
   });
 }
