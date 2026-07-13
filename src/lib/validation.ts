@@ -68,10 +68,14 @@ const journalLineSchema = z
 
 export const createClientSchema = z.object({
   type: z.enum(["CORPORATE", "INDIVIDUAL"]),
-  name: z.string().min(2).max(160),
-  email: z.string().email().optional().or(z.literal("")),
+  name: z.string().min(2, "Name must be at least 2 characters").max(160),
+  email: z.string().email("Enter a valid email").optional().or(z.literal("")),
   phone: z.string().max(30).optional().or(z.literal("")),
+  address: z.string().max(300).optional().or(z.literal("")),
+  idNumber: z.string().max(60).optional().or(z.literal("")),
   taxId: z.string().max(40).optional().or(z.literal("")),
+  caseType: z.string().max(40).optional().or(z.literal("")),
+  assignedLawyerId: z.string().uuid().optional().or(z.literal("")),
   amlRisk: z.enum(["LOW", "MEDIUM", "HIGH"]).default("LOW"),
 });
 export type CreateClientInput = z.infer<typeof createClientSchema>;
@@ -432,7 +436,15 @@ export type ConflictQuestionnaireInput = z.infer<typeof conflictQuestionnaireSch
 export const clientDocumentSchema = z.object({
   kind: z.enum(["IDENTITY", "REFERENCE", "CONTRACT", "KYC_REPORT", "CONFLICT_REPORT", "OTHER"]),
   filename: z.string().min(1).max(200),
-  mime: z.string().min(3).max(100),
+  // Intake allowlist: PDF, DOCX, JPG, PNG (+ plain text for generated reports).
+  mime: z.enum([
+    "application/pdf",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "image/jpeg",
+    "image/png",
+    "text/plain",
+    "text/markdown",
+  ]),
   base64: z.string().min(4).max(2_800_000),
   notes: z.string().max(500).optional().or(z.literal("")),
 });

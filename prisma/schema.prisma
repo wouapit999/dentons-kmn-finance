@@ -119,6 +119,7 @@ model User {
   timeEntries    TimeEntry[]     @relation("LawyerTime")
   taskAssignments TaskAssignment[]
   taskComments    TaskComment[]
+  assignedClients Client[]       @relation("LawyerClients")
 
   @@unique([companyId, email])
   @@index([companyId])
@@ -379,11 +380,16 @@ model PracticeArea {
 model Client {
   id             String    @id @default(uuid())
   companyId      String
+  clientNo       String? // auto-generated intake reference, e.g. CL-2026-00001
   type           String // CORPORATE | INDIVIDUAL
   name           String
   email          String?
   phone          String?
+  address        String?
+  idNumber       String? // national ID / passport / RCCM registration
   taxId          String?
+  caseType       String? // initial engagement area (see CASE_TYPES)
+  assignedLawyerId String?
   kycStatus      String    @default("PENDING") // PENDING | VERIFIED | REJECTED
   amlRisk        String    @default("LOW") // LOW | MEDIUM | HIGH
   conflictStatus String    @default("NOT_RUN") // NOT_RUN | CLEAR | POTENTIAL | BLOCKED
@@ -394,6 +400,7 @@ model Client {
   deletedAt      DateTime?
 
   company        Company         @relation(fields: [companyId], references: [id])
+  assignedLawyer User?           @relation("LawyerClients", fields: [assignedLawyerId], references: [id])
   matters        Matter[]
   conflictChecks ConflictCheck[]
   invoices       Invoice[]
@@ -402,6 +409,7 @@ model Client {
   tasks          Task[]
   documents      ClientDocument[]
 
+  @@unique([companyId, clientNo])
   @@index([companyId])
 }
 

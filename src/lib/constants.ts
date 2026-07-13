@@ -46,6 +46,21 @@ export const CLIENT_DOC_KINDS = [
   "IDENTITY", "REFERENCE", "CONTRACT", "KYC_REPORT", "CONFLICT_REPORT", "OTHER",
 ] as const;
 
+// Engagement / case types offered at client intake.
+export const CASE_TYPES = [
+  "CORPORATE_COMMERCIAL", "LITIGATION_ARBITRATION", "TAX", "INTELLECTUAL_PROPERTY",
+  "REAL_ESTATE", "EMPLOYMENT", "COMPLIANCE", "OTHER",
+] as const;
+
+// Allowed client-document upload types (validated client- and server-side).
+export const CLIENT_DOC_MIMES = [
+  "application/pdf",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document", // DOCX
+  "image/jpeg",
+  "image/png",
+  "text/plain",
+] as const;
+
 // --- Tasks module ---
 export const TASK_PRIORITIES = ["LOW", "MEDIUM", "HIGH", "CRITICAL"] as const;
 export const TASK_STATUSES = [

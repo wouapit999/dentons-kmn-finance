@@ -110,6 +110,49 @@ export async function kycScreen(
   return { report, riskLevel };
 }
 
+/**
+ * Lightweight document metadata scan for client intake: does the document
+ * mention the client's name, and which matter/case references appear?
+ * Uses the vision model for PDFs/images; the caller falls back to text
+ * heuristics when no AI key is configured.
+ */
+export async function docMetaScan(
+  base64: string,
+  mime: string,
+  clientName: string,
+  cfg: AiConfig,
+): Promise<{ mentionsClient: boolean; caseRefs: string[]; docType: string | null }> {
+  const c = client(cfg);
+  const isPdf = mime === "application/pdf";
+  const doc: Anthropic.Messages.ContentBlockParam = isPdf
+    ? { type: "document", source: { type: "base64", media_type: "application/pdf", data: base64 } }
+    : {
+        type: "image",
+        source: {
+          type: "base64",
+          media_type: (["image/png", "image/jpeg", "image/webp", "image/gif"].includes(mime)
+            ? mime
+            : "image/png") as "image/png" | "image/jpeg" | "image/webp" | "image/gif",
+          data: base64,
+        },
+      };
+  const msg = await c.messages.create({
+    model: cfg.model,
+    max_tokens: 300,
+    system:
+      "Scan the document. Return ONLY JSON with keys: mentionsClient (boolean — does the " +
+      `document mention "${clientName}" or an obvious variant), caseRefs (array of case/matter ` +
+      "reference codes found, e.g. M-2026-001, RG numbers), docType (short label like " +
+      "'national ID', 'contract', 'invoice', 'court filing', or null). No prose.",
+    messages: [{ role: "user", content: [doc, { type: "text", text: "Scan for metadata." }] }],
+  });
+  const text = firstText(msg).trim();
+  const start = text.indexOf("{");
+  const end = text.lastIndexOf("}");
+  if (start === -1 || end === -1) throw new AuthError(422, "scan_failed");
+  return JSON.parse(text.slice(start, end + 1));
+}
+
 export interface ExtractedInvoice {
   supplierName: string | null;
   invoiceNumber: string | null;
