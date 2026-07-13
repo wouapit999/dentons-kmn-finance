@@ -1,0 +1,12 @@
+# Never upload local env/database to Vercel — the build must use the project's
+# own environment variables (DB_PROVIDER=postgresql, DATABASE_URL, AUTH_SECRET).
+.env
+.env.local
+.env*.local
+*.db
+*.db-journal
+prisma/dev.db
+node_modules
+.next
+.git
+docs
