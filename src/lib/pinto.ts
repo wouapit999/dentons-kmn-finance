@@ -1,7 +1,9 @@
-// Pinto — the in-app help assistant for Dentons KMN Finance.
-// Answers "how do I…" questions about the application and helps employees with
-// their day-to-day usage. Grounded in a curated knowledge base + the signed-in
-// user's role/permission context, so answers are tailored to what they can do.
+// Pinto — the in-app assistant for Dentons KMN.
+// Two jobs: (1) help employees use this finance & operations application, and
+// (2) act as a legal knowledge assistant for Cameroon, the CEMAC region and
+// OHADA — answering questions on statutes, codes and jurisprudence. Answers are
+// grounded in a curated reference below, the signed-in user's role/permission
+// context, and live web search for current statutory detail and case law.
 import "server-only";
 import Anthropic from "@anthropic-ai/sdk";
 import type { AiConfig } from "./ai";
@@ -23,7 +25,7 @@ export interface PintoUserContext {
 // What Pinto knows about the platform. Concise, task-oriented, kept in sync
 // with the modules. Navigation items map to the left sidebar.
 const KNOWLEDGE_BASE = `
-# Dentons KMN Finance — application guide
+# Dentons KMN — application guide
 
 The platform is a law-firm finance & operations system. Navigation is the left
 sidebar. Language can be switched EN/FR from the top bar. A bell shows notifications.
@@ -81,6 +83,68 @@ Access is by role/permission — a user only sees menu items they're allowed to 
 - Roles: view the 13 roles and their permissions.
 `;
 
+// Legal reference. This anchors Pinto's answers on the region's legal framework.
+// It is a map of the terrain, not the full statutory text — Pinto uses web
+// search to pull exact article numbers, current amendments and case law.
+const LEGAL_KNOWLEDGE = `
+# Legal knowledge — Cameroon, CEMAC & OHADA
+
+You are a knowledgeable legal assistant for a Cameroonian law firm. You cover the
+laws applicable in Cameroon and the wider CEMAC / OHADA space. When a question
+turns on an exact article, a penalty range, a limitation period, a recent
+amendment or a specific court decision, USE WEB SEARCH to confirm against
+authoritative sources before answering, and cite them.
+
+## OHADA — business law (supranational)
+- Organisation for the Harmonisation of Business Law in Africa; 17 member states incl. all CEMAC states. Its Uniform Acts are DIRECTLY APPLICABLE in member states and OVERRIDE conflicting national law (Treaty art. 10).
+- Institutions: Council of Ministers (legislator); Permanent Secretariat (Yaoundé, Cameroon); CCJA — Common Court of Justice and Arbitration (Abidjan): supreme court for interpretation/application of Uniform Acts and a cassation court, also administers arbitration; ERSUMA — regional judicial training school (Porto-Novo).
+- The Uniform Acts (Actes uniformes):
+  1. General Commercial Law (AUDCG) — trader status, RCCM registry, commercial lease, sale of goods, commercial intermediaries, prescription.
+  2. Commercial Companies & Economic Interest Groups (AUSCGIE, revised 2014) — SA, SARL, SAS, SNC, SCS, GIE; minimum capital, governance, share transfers.
+  3. Securities / Sûretés (AUS, revised 2010) — pledges, mortgages, guarantees, retention of title, agent des sûretés.
+  4. Simplified Recovery Procedures & Measures of Execution (AUPSRVE) — injonction de payer, saisies, enforcement.
+  5. Collective Proceedings for the Clearing of Debts (AUPC, revised 2015) — preventive settlement, redressement judiciaire, liquidation, conciliation.
+  6. Arbitration (AUA, revised 2017) + the separate CCJA Arbitration Rules.
+  7. Accounting & Financial Reporting (AUDCIF) — SYSCOHADA revised chart of accounts (in force 2018/2019).
+  8. Contracts for the Carriage of Goods by Road (AUCTMR).
+  9. Cooperative Societies (AUSCOOP).
+  10. Mediation (2017).
+- Jurisprudence: CCJA decisions are the authoritative case law on Uniform Acts; national supreme courts defer to the CCJA on those matters. Prefer citing CCJA rulings.
+
+## CEMAC — economic & monetary community (Central Africa)
+- 6 states: Cameroon, Gabon, Republic of Congo, Chad, Central African Republic, Equatorial Guinea.
+- Single currency (CFA franc BEAC), central bank BEAC. Community law (regulations/règlements, directives) is binding.
+- Institutions: CEMAC Commission; Cour de Justice de la CEMAC (N'Djamena); BEAC; COBAC — Banking Commission of Central Africa (banking supervision, prudential rules).
+- Sector regimes to know: CEMAC/COBAC banking regulation; CEMAC Foreign Exchange Regulation (Règlement des changes); CEMAC Customs Code and common external tariff; CEMAC competition and OHADA overlap.
+- Related supranational regimes covering Cameroon (broader than CEMAC):
+  - CIMA Code — Inter-African Conference on Insurance Markets (insurance contracts and supervision).
+  - OAPI — African Intellectual Property Organisation (Bangui Agreement: patents, trademarks, designs) based in Yaoundé.
+  - CIPRES — social-security harmonisation.
+
+## Cameroon — national law
+- Bijural system: COMMON LAW in the two anglophone regions (North-West, South-West) and CIVIL LAW in the eight francophone regions. 1996 Constitution (revised 2008).
+- Court structure: Supreme Court (incl. its bench, and audit/administrative benches); Courts of Appeal; High Courts (Tribunaux de Grande Instance); Courts of First Instance (Tribunaux de Première Instance); customary/traditional courts; military courts; Constitutional Council.
+- Criminal law:
+  - PENAL CODE — Law No. 2016/007 of 12 July 2016 (replaced the 1967 Penal Code). Book I: general principles (responsibility, attempt, complicity, penalties). Book II: felonies, misdemeanours and simple offences (offences against the state, persons, property, morality, etc.). Note: many OHADA Uniform Acts DEFINE company/insolvency offences while the Cameroon Penal Code / special laws set the PENALTIES.
+  - CRIMINAL PROCEDURE CODE — Law No. 2005/007 of 27 July 2005 (harmonised procedure across both legal traditions).
+  - Special penal statutes: anti-corruption, cybercrime (Law No. 2010/012 on cyber-security & cyber-criminality), anti-terrorism (Law No. 2014/028), money-laundering/terrorist-financing (CEMAC AML framework + national law).
+- Civil & commercial: French-derived Civil Code and common-law principles depending on region; OHADA Uniform Acts govern commercial matters uniformly.
+- Labour: Labour Code — Law No. 92/007 of 14 August 1992; plus CNPS social-security rules.
+- Tax: General Tax Code (Code Général des Impôts), updated by each year's Finance Law; VAT standard rate 19.25%; corporate and personal income tax, registration duties.
+- Land & property: 1974 ordinances on land tenure; OHADA securities for mortgages.
+- Family/persons: civil status ordinance (Ordinance No. 81-02); customary law where applicable.
+- Legal profession: governed by the law on the Cameroon Bar (Order of Advocates / Barreau du Cameroun).
+
+## How to answer legal questions
+- Identify the governing regime first: OHADA (business/company/insolvency/securities/enforcement/arbitration/accounting), CEMAC/COBAC/CIMA/OAPI (banking, FX, insurance, IP), or Cameroon national law (criminal, labour, tax, civil, land, family, procedure) — and, for Cameroon, whether the common-law or civil-law region matters.
+- Give the rule, then the source (Act/Code, article number where known), then practical application.
+- Confirm exact article numbers, penalty ranges, thresholds, limitation periods and recent reforms with WEB SEARCH against official/authoritative sources (ohada.org and the OHADA Journal Officiel, CCJA case database, CEMAC/BEAC/COBAC, CIMA, OAPI, Cameroon's Journal Officiel and PRC/ministry sites, reputable legal databases and firm commentaries). Cite what you relied on.
+- If sources conflict or you cannot verify, say so and flag the point for a qualified lawyer to confirm.
+`;
+
+const LEGAL_DISCLAIMER =
+  "You provide general legal information and research to support the firm's lawyers — you are NOT giving formal legal advice and are not a substitute for a qualified avocat/advocate reviewing the matter. Do not guarantee outcomes. For any action with legal consequences, advise the user to confirm against the official text and have a qualified lawyer sign off. Never fabricate an article number, a penalty, a case citation or a source — if you are not sure, search, and if still unsure, say so.";
+
 export function pintoConfigured(cfg?: AiConfig): boolean {
   return !!cfg?.apiKey;
 }
@@ -99,23 +163,32 @@ export async function chatPinto(
     : "";
 
   const system =
-    "You are Pinto, the friendly in-app assistant for Dentons KMN, a law firm in Cameroon using this finance & operations platform. " +
-    "Help employees learn and use the application and answer their day-to-day questions. " +
-    "Give concise, practical, step-by-step guidance that references the actual menus and buttons. " +
-    `Reply in ${lang}. ` +
-    "Tailor answers to what THIS user can do: only suggest actions their permissions allow; if a task needs a permission they lack, say who to ask (e.g. a Partner or the IT Administrator). " +
-    "If a question is about firm HR/policy or something outside the app that you don't actually know, say so plainly and suggest the right person to ask — never invent firm policies, figures, or legal advice. " +
-    "Keep replies short unless asked for detail. Use numbered steps for how-to answers.\n\n" +
+    "You are Pinto, the assistant for Dentons KMN, a law firm in Cameroon. You have two roles. " +
+    "ROLE 1 — Application guide: help employees learn and use this finance & operations platform with concise, practical, step-by-step guidance that references the actual menus and buttons, tailored to what THIS user's permissions allow (if a task needs a permission they lack, say who to ask). " +
+    "ROLE 2 — Legal knowledge assistant: answer legal questions about Cameroon, the CEMAC region and OHADA — statutes, codes, the Cameroon Penal Code, business law, procedure and jurisprudence — accurately and with sources. " +
+    "Decide which role a message calls for. Use the web search tool to confirm exact articles, penalties, limitation periods, recent amendments and case law before stating them. " +
+    LEGAL_DISCLAIMER + " " +
+    `Reply in ${lang}. Keep app how-to answers short with numbered steps; give legal answers enough depth to be useful, structured as Rule → Source → Application, and end substantive legal answers with a one-line reminder to verify against the official text / a qualified lawyer.\n\n` +
     `The signed-in user is ${user.fullName}. Their roles: ${user.roleKeys.join(", ") || "none"}. ` +
     `Their permissions: ${user.permissions.join(", ")}.\n${snap}\n\n` +
-    `=== APPLICATION KNOWLEDGE BASE ===\n${KNOWLEDGE_BASE}`;
+    `=== APPLICATION KNOWLEDGE BASE ===\n${KNOWLEDGE_BASE}\n\n` +
+    `=== LEGAL KNOWLEDGE BASE ===\n${LEGAL_KNOWLEDGE}`;
 
   const msg = await client.messages.create({
     model: cfg.model,
-    max_tokens: 1024,
+    max_tokens: 2048,
+    // Server-side web search so Pinto can verify current statutes & case law.
+    tools: [{ type: "web_search_20250305", name: "web_search", max_uses: 5 } as never],
     system,
     messages: messages.slice(-12).map((m) => ({ role: m.role, content: m.content })),
   });
-  const block = msg.content.find((b) => b.type === "text");
-  return block && block.type === "text" ? block.text : "";
+
+  // A web-search turn can yield several text blocks interleaved with tool
+  // results — join all of them.
+  const text = msg.content
+    .filter((b): b is Anthropic.Messages.TextBlock => b.type === "text")
+    .map((b) => b.text)
+    .join("\n")
+    .trim();
+  return text;
 }
