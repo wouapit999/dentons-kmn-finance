@@ -4,14 +4,14 @@ import type { Locale } from "./constants";
 
 export const dictionaries = {
   en: {
-    "app.name": "Dentons KMN Finance",
+    "app.name": "Dentons KMN ERP",
     "nav.dashboard": "Dashboard",
     "nav.users": "Users",
     "nav.roles": "Roles & Permissions",
     "nav.audit": "Audit Log",
     "nav.logout": "Sign out",
     "login.title": "Sign in",
-    "login.subtitle": "Finance Management System",
+    "login.subtitle": "ERP by Bouquet Innovation SA",
     "login.email": "Email",
     "login.password": "Password",
     "login.submit": "Sign in",
@@ -504,14 +504,14 @@ export const dictionaries = {
     "pwa.done": "Done",
   },
   fr: {
-    "app.name": "Dentons KMN Finance",
+    "app.name": "Dentons KMN ERP",
     "nav.dashboard": "Tableau de bord",
     "nav.users": "Utilisateurs",
     "nav.roles": "Rôles et permissions",
     "nav.audit": "Journal d'audit",
     "nav.logout": "Se déconnecter",
     "login.title": "Connexion",
-    "login.subtitle": "Système de gestion financière",
+    "login.subtitle": "ERP par Bouquet Innovation SA",
     "login.email": "Adresse e-mail",
     "login.password": "Mot de passe",
     "login.submit": "Se connecter",

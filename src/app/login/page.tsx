@@ -3,6 +3,7 @@ import { Suspense, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button, Input, Card } from "@/components/ui";
+import { Logo } from "@/components/logo";
 import { useT } from "@/lib/useT";
 import { useUi } from "@/lib/store";
 import type { LoginInput } from "@/lib/validation";
@@ -60,11 +61,9 @@ function LoginForm() {
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-brand-50 to-slate-100 p-4 dark:from-slate-950 dark:to-slate-900">
       <Card className="w-full max-w-md p-8">
         <div className="mb-6 text-center">
-          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-lg bg-brand text-lg font-bold text-white">
-            KMN
-          </div>
+          <Logo className="mx-auto mb-3 h-9 w-auto" />
           <h1 className="text-xl font-semibold">{t("login.title")}</h1>
-          <p className="text-sm text-slate-500">{t("login.subtitle")}</p>
+          <p className="text-sm text-slate-500">ERP by Bouquet Innovation SA</p>
         </div>
 
         {mfaToken ? (

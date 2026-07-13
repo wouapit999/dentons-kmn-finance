@@ -3,8 +3,8 @@ import "./globals.css";
 import { Providers } from "@/components/providers";
 
 export const metadata: Metadata = {
-  title: "Dentons KMN Finance",
-  description: "Dentons KMN Finance Management System",
+  title: "Dentons KMN ERP",
+  description: "Dentons KMN ERP by Bouquet Innovation SA",
 };
 
 export default function RootLayout({

@@ -40,6 +40,7 @@ import { useUi } from "@/lib/store";
 import { cn, Button } from "@/components/ui";
 import { NotificationsBell } from "@/components/notifications-bell";
 import { Pinto } from "@/components/pinto";
+import { Logo } from "@/components/logo";
 import type { MessageKey } from "@/lib/i18n";
 import type { Locale } from "@/lib/constants";
 
@@ -109,11 +110,9 @@ export function Shell({ children, user }: ShellProps) {
   return (
     <div className="flex min-h-screen">
       <aside className="flex w-60 flex-col border-r border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
-        <div className="flex items-center gap-2 px-5 py-4">
-          <div className="flex h-9 w-9 items-center justify-center rounded-md bg-brand text-sm font-bold text-white">
-            KMN
-          </div>
-          <div className="text-sm font-semibold leading-tight">Dentons KMN<br /><span className="text-xs font-normal text-slate-500">Finance</span></div>
+        <div className="px-5 py-4">
+          <Logo className="h-7 w-auto" />
+          <div className="mt-1.5 text-[11px] font-normal text-slate-500">ERP by Bouquet Innovation SA</div>
         </div>
         <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-2">
           {nav
