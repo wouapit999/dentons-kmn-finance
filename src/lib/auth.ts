@@ -25,6 +25,8 @@ export interface CurrentUser {
   fullName: string;
   locale: string;
   status: string;
+  mustChangePassword: boolean;
+  mfaEnabled: boolean;
   permissions: Set<string>;
   roleKeys: string[];
 }
@@ -88,6 +90,8 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
     fullName: user.fullName,
     locale: user.locale,
     status: user.status,
+    mustChangePassword: user.mustChangePassword,
+    mfaEnabled: user.mfaEnabled,
     permissions,
     roleKeys,
   };

@@ -101,6 +101,7 @@ export const PERMISSIONS = {
   "user:reset_password": "Reset another user's password",
   "role:read": "View roles and permissions",
   "role:manage": "Create/edit roles and assign permissions",
+  "security:admin": "Manage password policy, lock accounts, reset MFA",
   "audit:read": "View the audit log",
 
   // General Ledger
@@ -200,7 +201,8 @@ export const SYSTEM_ROLES: {
       "payment:approve", "ap:read", "ap:approve", "trust:read", "trust:manage",
       "payroll:read", "payroll:manage", "payroll:post", "asset:read",
       "budget:read", "budget:manage", "cash:read", "bank:read",
-      "procure:read", "procure:approve", "task:admin", "report:read", "report:export",
+      "procure:read", "procure:approve", "task:admin", "security:admin",
+      "report:read", "report:export",
     ],
   },
   {
@@ -300,7 +302,7 @@ export const SYSTEM_ROLES: {
     hierarchyLevel: 15,
     permissions: [
       "user:read", "user:manage", "user:reset_password", "role:read",
-      "role:manage", "task:admin", "audit:read",
+      "role:manage", "security:admin", "task:admin", "audit:read",
     ],
   },
   {

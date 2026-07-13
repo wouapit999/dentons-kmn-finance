@@ -100,9 +100,13 @@ model User {
   passwordHash  String
   mfaEnabled    Boolean   @default(false)
   mfaSecretEnc  String?
+  recoveryEmail String?
+  mustChangePassword Boolean @default(false)
+  passwordChangedAt  DateTime?
   lastLoginAt   DateTime?
   failedLogins  Int       @default(0)
   lockedUntil   DateTime?
+  lockedManually Boolean  @default(false)
   version       Int       @default(1)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
@@ -120,6 +124,7 @@ model User {
   taskAssignments TaskAssignment[]
   taskComments    TaskComment[]
   assignedClients Client[]       @relation("LawyerClients")
+  passwordHistory PasswordHistory[]
 
   @@unique([companyId, email])
   @@index([companyId])
@@ -199,6 +204,18 @@ model Session {
   createdAt DateTime  @default(now())
   expiresAt DateTime
   revokedAt DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// Rolling history of past password hashes, to prevent reuse.
+model PasswordHistory {
+  id           String   @id @default(uuid())
+  userId       String
+  passwordHash String
+  createdAt    DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 

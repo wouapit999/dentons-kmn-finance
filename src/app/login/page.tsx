@@ -22,6 +22,15 @@ function LoginForm() {
   const { locale, setLocale } = useUi();
   const { register, handleSubmit, formState } = useForm<LoginInput>();
   const [error, setError] = useState<string | null>(null);
+  const [mfaToken, setMfaToken] = useState<string | null>(null);
+  const [code, setCode] = useState("");
+
+  function afterAuth(body: { locale?: string; mustChangePassword?: boolean }) {
+    if (body.locale === "en" || body.locale === "fr") setLocale(body.locale);
+    if (body.mustChangePassword) router.push("/security?force=1");
+    else router.push(params.get("next") || "/dashboard");
+    router.refresh();
+  }
 
   async function onSubmit(data: LoginInput) {
     setError(null);
@@ -30,14 +39,21 @@ function LoginForm() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
-    if (!res.ok) {
-      setError(t("login.error"));
-      return;
-    }
+    if (!res.ok) { setError(t("login.error")); return; }
     const body = await res.json();
-    if (body.locale) setLocale(body.locale);
-    router.push(params.get("next") || "/dashboard");
-    router.refresh();
+    if (body.mfaRequired) { setMfaToken(body.mfaToken); return; } // show 2FA step
+    afterAuth(body);
+  }
+
+  async function submitMfa() {
+    setError(null);
+    const res = await fetch("/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ mfaToken, code }),
+    });
+    if (!res.ok) { setError(t("login.mfaError")); return; }
+    afterAuth(await res.json());
   }
 
   return (
@@ -51,20 +67,40 @@ function LoginForm() {
           <p className="text-sm text-slate-500">{t("login.subtitle")}</p>
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div>
-            <label className="mb-1 block text-sm font-medium">{t("login.email")}</label>
-            <Input type="email" autoComplete="username" {...register("email", { required: true })} />
+        {mfaToken ? (
+          <div className="space-y-4">
+            <p className="text-sm text-slate-500">{t("login.mfaPrompt")}</p>
+            <Input
+              inputMode="numeric" autoComplete="one-time-code" maxLength={6}
+              placeholder="123456" value={code}
+              onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
+              onKeyDown={(e) => { if (e.key === "Enter" && code.length === 6) submitMfa(); }}
+              autoFocus
+            />
+            {error && <p className="text-sm text-red-600">{error}</p>}
+            <Button className="w-full" disabled={code.length !== 6} onClick={submitMfa}>
+              {t("login.verify")}
+            </Button>
+            <button className="w-full text-xs text-slate-500 hover:underline" onClick={() => { setMfaToken(null); setCode(""); setError(null); }}>
+              {t("common.cancel")}
+            </button>
           </div>
-          <div>
-            <label className="mb-1 block text-sm font-medium">{t("login.password")}</label>
-            <Input type="password" autoComplete="current-password" {...register("password", { required: true })} />
-          </div>
-          {error && <p className="text-sm text-red-600">{error}</p>}
-          <Button type="submit" className="w-full" disabled={formState.isSubmitting}>
-            {t("login.submit")}
-          </Button>
-        </form>
+        ) : (
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            <div>
+              <label className="mb-1 block text-sm font-medium">{t("login.email")}</label>
+              <Input type="email" autoComplete="username" {...register("email", { required: true })} />
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-medium">{t("login.password")}</label>
+              <Input type="password" autoComplete="current-password" {...register("password", { required: true })} />
+            </div>
+            {error && <p className="text-sm text-red-600">{error}</p>}
+            <Button type="submit" className="w-full" disabled={formState.isSubmitting}>
+              {t("login.submit")}
+            </Button>
+          </form>
+        )}
 
         <div className="mt-6 flex items-center justify-center gap-2 text-xs text-slate-500">
           <span>{t("common.language")}:</span>

@@ -15,9 +15,10 @@ export interface SessionClaims extends JWTPayload {
 export async function signToken(
   claims: { sub: string; jti: string; cid: string },
   ttlSeconds: number,
+  extra: Record<string, string> = {},
 ): Promise<string> {
   const now = Math.floor(Date.now() / 1000);
-  return new SignJWT({ cid: claims.cid })
+  return new SignJWT({ cid: claims.cid, ...extra })
     .setProtectedHeader({ alg: "HS256" })
     .setSubject(claims.sub)
     .setJti(claims.jti)

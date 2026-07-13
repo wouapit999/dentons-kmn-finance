@@ -53,6 +53,7 @@ export async function POST(req: NextRequest) {
         email: input.email.toLowerCase(),
         phone: input.phone || null,
         passwordHash: await hashPassword(input.password),
+        passwordChangedAt: new Date(),
         locale: input.locale,
         currency: input.currency,
         departmentId: input.departmentId || null,
