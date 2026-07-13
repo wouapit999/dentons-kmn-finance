@@ -55,12 +55,10 @@ export async function POST(req: NextRequest) {
     ]);
 
     try {
-      const reply = await chatPinto(cfg, messages, {
-        fullName: user.fullName,
-        roleKeys: user.roleKeys,
-        permissions: Array.from(user.permissions),
-        locale: user.locale,
-        snapshot: { openTasks, overdueTasks, unreadNotifications: unread },
+      const reply = await chatPinto(cfg, messages, user, {
+        openTasks,
+        overdueTasks,
+        unreadNotifications: unread,
       });
       return { configured: true, reply };
     } catch (e) {
