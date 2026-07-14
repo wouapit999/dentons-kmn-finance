@@ -12,11 +12,15 @@ import "server-only";
 import Anthropic from "@anthropic-ai/sdk";
 import { prisma } from "./prisma";
 import type { CurrentUser } from "./auth";
+import type { AiConfig } from "./ai";
 import { taskVisibilityWhere, canModify, notify } from "./tasks";
+import { generatePintoDocument, splitTitle, type PintoDocument } from "./pinto-doc";
+import { buildPdf, buildDocx } from "./docgen";
 import { writeAudit } from "./audit";
 
 export interface ToolContext {
   user: CurrentUser;
+  cfg: AiConfig;
 }
 
 // Tool schemas advertised to the model.
@@ -94,7 +98,35 @@ export const PINTO_TOOLS: Anthropic.Tool[] = [
       required: ["task", "body"],
     },
   },
+  {
+    name: "save_document_to_client",
+    description:
+      "Draft a document (or save Markdown you already wrote) and store it in a client's file (their Documents), so lawyers can reuse it for billing and portfolio review. Requires client-management rights (lawyers). Provide either `content` (exact Markdown to save) or `instruction` (what to draft).",
+    input_schema: {
+      type: "object",
+      properties: {
+        clientName: { type: "string", description: "Client to file the document under (by name)." },
+        format: { type: "string", enum: ["pdf", "docx"] },
+        content: {
+          type: "string",
+          description: "Exact Markdown to save verbatim (e.g. a draft you just wrote in chat). Takes precedence over instruction.",
+        },
+        instruction: { type: "string", description: "What document to draft, if not passing content." },
+        title: { type: "string" },
+        kind: {
+          type: "string",
+          enum: ["CONTRACT", "REFERENCE", "KYC_REPORT", "CONFLICT_REPORT", "OTHER"],
+          description: "Document category filed in the client record; default OTHER.",
+        },
+      },
+      required: ["clientName", "format"],
+    },
+  },
 ];
+
+function safeFilename(title: string): string {
+  return title.replace(/[^a-zA-Z0-9 _-]/g, "").trim().replace(/\s+/g, "_").slice(0, 60) || "Document";
+}
 
 // Resolve a list of email-or-name strings to active user rows in the company.
 async function resolveUsers(ctx: ToolContext, list: string[]) {
@@ -328,6 +360,88 @@ export async function runPintoTool(
           after: { via: "pinto" },
         });
         return { ok: true, taskId: task.id, commentId: comment.id, link: `/tasks/${task.id}` };
+      }
+
+      case "save_document_to_client": {
+        // Lawyers write, others read-only — mirror the client:manage gate used
+        // by the client-documents upload endpoint.
+        if (!ctx.user.permissions.has("client:manage")) {
+          return { error: "Only lawyers with client-management rights can save documents to a client file." };
+        }
+        const clientName = String(input.clientName ?? "").trim();
+        if (!clientName) return { error: "clientName required" };
+        const format = input.format === "pdf" ? "pdf" : input.format === "docx" ? "docx" : null;
+        if (!format) return { error: "format must be pdf or docx" };
+
+        const matches = await prisma.client.findMany({
+          where: { companyId: ctx.user.companyId, deletedAt: null, name: { contains: clientName } },
+          select: { id: true, name: true },
+          take: 6,
+        });
+        if (!matches.length) return { error: `no client matching "${clientName}"` };
+        if (matches.length > 1) {
+          return { error: "multiple clients match — please specify", candidates: matches.map((m) => m.name) };
+        }
+        const client = matches[0];
+
+        // Build the document: verbatim content if provided, else draft it.
+        let doc: PintoDocument;
+        const content = String(input.content ?? "").trim();
+        if (content) {
+          const { title, body } = splitTitle(content, String(input.title ?? "Document"));
+          doc = {
+            title: input.title ? String(input.title) : title,
+            subtitle: `Dentons KMN — ${new Date().toISOString().slice(0, 10)}`,
+            markdown: body,
+          };
+        } else {
+          const instruction = String(input.instruction ?? "").trim();
+          if (!instruction) return { error: "provide either content or instruction" };
+          doc = await generatePintoDocument(ctx.cfg, instruction, ctx.user);
+          if (input.title) doc.title = String(input.title);
+        }
+
+        const buf = format === "pdf" ? await buildPdf(doc) : await buildDocx(doc);
+        const sizeBytes = buf.length;
+        if (sizeBytes > 2 * 1024 * 1024) return { error: "generated document exceeds the 2MB limit" };
+
+        const kinds = ["CONTRACT", "REFERENCE", "KYC_REPORT", "CONFLICT_REPORT", "OTHER"];
+        const kind = kinds.includes(String(input.kind)) ? String(input.kind) : "OTHER";
+        const mime =
+          format === "pdf"
+            ? "application/pdf"
+            : "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+        const filename = `${safeFilename(doc.title)}.${format}`;
+
+        const saved = await prisma.clientDocument.create({
+          data: {
+            companyId: ctx.user.companyId,
+            clientId: client.id,
+            kind,
+            filename,
+            mime,
+            sizeBytes,
+            data: buf.toString("base64"),
+            notes: "Generated by Pinto",
+            uploadedBy: ctx.user.id,
+          },
+        });
+        await writeAudit({
+          companyId: ctx.user.companyId,
+          actorId: ctx.user.id,
+          action: "CLIENT_DOC_ADDED",
+          entityType: "Client",
+          entityId: client.id,
+          after: { kind, filename, sizeBytes, via: "pinto" },
+        });
+        return {
+          ok: true,
+          documentId: saved.id,
+          client: client.name,
+          filename,
+          kind,
+          link: `/clients/${client.id}`,
+        };
       }
 
       default:

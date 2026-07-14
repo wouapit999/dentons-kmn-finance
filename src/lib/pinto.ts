@@ -148,61 +148,8 @@ export function pintoConfigured(cfg?: AiConfig): boolean {
   return !!cfg?.apiKey;
 }
 
-export interface PintoDocument {
-  title: string;
-  subtitle?: string;
-  markdown: string;
-}
-
-// Draft a complete downloadable document (legal memo, jurisprudence note,
-// contract, letter, research write-up) from a free-text instruction. Uses web
-// search so legal content (articles, case citations) can be verified.
-export async function generatePintoDocument(
-  cfg: AiConfig,
-  instruction: string,
-  user: CurrentUser,
-): Promise<PintoDocument> {
-  if (!cfg.apiKey) throw new AuthError(503, "pinto_not_configured");
-  const client = new Anthropic({ apiKey: cfg.apiKey });
-  const lang = user.locale === "fr" ? "French" : "English";
-
-  const system =
-    "You are Pinto, drafting a formal, ready-to-use document for Dentons KMN, a law firm in Cameroon. " +
-    "Produce a COMPLETE, well-structured document in Markdown answering the user's request. " +
-    "Begin with a single '# Title' line (a real title, not the word 'Title'), then the document body using ##/### headings, short paragraphs and '- ' bullet points. " +
-    "For legal documents (jurisprudence notes, case summaries, memoranda, contracts, clauses, opinions) be accurate and cite the governing texts (OHADA Uniform Acts and CCJA case law, CEMAC/COBAC/CIMA/OAPI, Cameroon codes incl. the Penal Code and Criminal Procedure Code, articles where known); use web search to verify articles and citations before stating them. " +
-    "Where a fact must be supplied by the firm (client name, dates, amounts), insert a clear placeholder like [CLIENT NAME]. " +
-    "Output ONLY the document itself — no preamble, no chat, no 'here is your document'. " +
-    `Write the document in ${lang}.`;
-
-  const res = await client.messages.create({
-    model: cfg.model,
-    max_tokens: 4096,
-    system,
-    tools: [{ type: "web_search_20250305", name: "web_search", max_uses: 5 } as unknown as Anthropic.Tool],
-    messages: [{ role: "user", content: instruction }],
-  });
-
-  const md = res.content
-    .filter((b): b is Anthropic.Messages.TextBlock => b.type === "text")
-    .map((b) => b.text)
-    .join("\n")
-    .trim();
-
-  // First H1 becomes the title; the rest is the body.
-  const lines = md.split("\n");
-  const idx = lines.findIndex((l) => /^#\s+/.test(l.trim()));
-  let title = "Document";
-  let body = md;
-  if (idx !== -1) {
-    title = lines[idx].replace(/^#\s+/, "").trim() || "Document";
-    body = lines.slice(idx + 1).join("\n").trim();
-  } else {
-    title = (instruction.slice(0, 60) || "Document").trim();
-  }
-  const generated = new Date().toISOString().slice(0, 10);
-  return { title, subtitle: `Dentons KMN — generated ${generated}`, markdown: body };
-}
+// Re-exported so existing importers (the document route) keep working.
+export { generatePintoDocument, type PintoDocument } from "./pinto-doc";
 
 export async function chatPinto(
   cfg: AiConfig,
@@ -223,9 +170,9 @@ export async function chatPinto(
     "You are Pinto, the assistant for Dentons KMN, a law firm in Cameroon. You have three roles. " +
     "ROLE 1 — Application guide: help employees learn and use this finance & operations platform with concise, practical, step-by-step guidance that references the actual menus and buttons, tailored to what THIS user's permissions allow (if a task needs a permission they lack, say who to ask). " +
     "ROLE 2 — Legal knowledge assistant: answer legal questions about Cameroon, the CEMAC region and OHADA — statutes, codes, the Cameroon Penal Code, business law, procedure and jurisprudence — accurately and with sources. Use the web search tool to confirm exact articles, penalties, limitation periods, recent amendments and case law before stating them. " +
-    "ROLE 3 — Co-working: you can ACT in the app for the user using your tools — find_colleague, list_my_tasks, create_task, delegate_task, comment_on_task. Use them when the user asks you to create a task, assign/delegate work to a colleague, comment on a task, or review their tasks. Resolve people with find_colleague when unsure of the exact name/email. If the request is ambiguous (title, assignee, due date), ask one brief clarifying question first; otherwise act, then report exactly what you did and include the task link. Everything you do runs under THIS user's own identity and permissions — never claim to have done something a tool did not confirm. " +
+    "ROLE 3 — Co-working: you can ACT in the app for the user using your tools — find_colleague, list_my_tasks, create_task, delegate_task, comment_on_task, and save_document_to_client. Use them when the user asks you to create a task, assign/delegate work to a colleague, comment on a task, review their tasks, or file a document into a client's record. Resolve people with find_colleague when unsure of the exact name/email. If the request is ambiguous (title, assignee, due date), ask one brief clarifying question first; otherwise act, then report exactly what you did and include the link. Everything you do runs under THIS user's own identity and permissions — never claim to have done something a tool did not confirm. " +
     "STRICT LIMITS — you have NO tools for and must REFUSE to perform: (a) FINANCIAL ENGAGEMENT — invoices, payments/receipts, trust transactions, payroll, GL/journal entries, AP/bills, budgets, cash, bank, procurement, fixed assets; (b) IT / ADMINISTRATION — creating or editing users and roles, security/password administration, AI settings. If asked for those, say plainly you can't perform financial or IT/admin actions and point the user to the right menu (e.g. Billing, Payroll) or person (e.g. a Partner, the CFO, or the IT Administrator). You may still explain HOW to do them. " +
-    "DOCUMENTS — you can produce downloadable documents: legal memos, jurisprudence notes/case summaries, contracts and clauses, engagement/letters, and research write-ups. When the user wants a document, help shape it in chat, then tell them to click the PDF or DOCX button beneath the message box to generate and download it (the document is built from their request). " +
+    "DOCUMENTS — you can produce downloadable documents: legal memos, jurisprudence notes/case summaries, contracts and clauses, engagement/letters, and research write-ups. When the user wants a document, help shape it in chat, then tell them to click the PDF or DOCX button beneath the message box to generate and download it. You can also FILE a document straight into a client's record with save_document_to_client (lawyers with client-management rights only) — use it when the user asks to save/attach a document to a client's file; pass the exact Markdown you drafted as `content` when you have it, so the saved file matches what you showed. " +
     LEGAL_DISCLAIMER + " " +
     `Reply in ${lang}. Keep app how-to answers short with numbered steps; give legal answers enough depth to be useful, structured as Rule → Source → Application, and end substantive legal answers with a one-line reminder to verify against the official text / a qualified lawyer.\n\n` +
     `The signed-in user is ${user.fullName}. Their roles: ${user.roleKeys.join(", ") || "none"}. ` +
@@ -270,7 +217,7 @@ export async function chatPinto(
     convo.push({ role: "assistant", content: res.content as unknown as Anthropic.Messages.ContentBlockParam[] });
     const results: Anthropic.Messages.ToolResultBlockParam[] = [];
     for (const tu of toolUses) {
-      const out = await runPintoTool(tu.name, (tu.input ?? {}) as Record<string, unknown>, { user });
+      const out = await runPintoTool(tu.name, (tu.input ?? {}) as Record<string, unknown>, { user, cfg });
       results.push({ type: "tool_result", tool_use_id: tu.id, content: JSON.stringify(out) });
     }
     convo.push({ role: "user", content: results });
