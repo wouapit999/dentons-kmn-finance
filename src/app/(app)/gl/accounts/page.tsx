@@ -4,6 +4,7 @@ import { useForm } from "react-hook-form";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button, Input, Card, Badge } from "@/components/ui";
 import { useT } from "@/lib/useT";
+import { usePerms } from "@/lib/usePerms";
 
 interface Account {
   id: string;
@@ -25,6 +26,7 @@ const TYPE_COLOR: Record<string, "green" | "red" | "amber" | "brand" | "slate"> 
 
 export default function AccountsPage() {
   const t = useT();
+  const { can } = usePerms();
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const accounts = useQuery({
@@ -43,7 +45,7 @@ export default function AccountsPage() {
           <h1 className="text-2xl font-semibold">{t("gl.accounts.title")}</h1>
           <p className="text-sm text-slate-500">{t("gl.accounts.subtitle")}</p>
         </div>
-        <Button onClick={() => setOpen(true)}>+ {t("gl.accounts.new")}</Button>
+        {can("gl:manage") && <Button onClick={() => setOpen(true)}>+ {t("gl.accounts.new")}</Button>}
       </div>
 
       <Card className="overflow-hidden">

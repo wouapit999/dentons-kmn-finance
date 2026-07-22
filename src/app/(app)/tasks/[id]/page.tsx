@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button, Input, Card, Badge } from "@/components/ui";
 import { useT } from "@/lib/useT";
+import { getJson } from "@/lib/usePerms";
 
 interface Detail {
   id: string;
@@ -263,7 +264,7 @@ function DependencyCard({ d, onChanged }: { d: Detail; onChanged: () => void }) 
   const [depId, setDepId] = useState("");
   const options = useQuery({
     queryKey: ["tasks", "dep-options"],
-    queryFn: async () => (await fetch("/api/tasks?assignee=")).json() as Promise<{ id: string; title: string }[]>,
+    queryFn: () => getJson<{ id: string; title: string }[]>("/api/tasks?assignee="),
   });
   const add = useMutation({
     mutationFn: async () => {

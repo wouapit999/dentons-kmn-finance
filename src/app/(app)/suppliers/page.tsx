@@ -4,6 +4,7 @@ import { useForm } from "react-hook-form";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button, Input, Card } from "@/components/ui";
 import { useT } from "@/lib/useT";
+import { usePerms, getJson } from "@/lib/usePerms";
 
 interface Supplier {
   id: string;
@@ -15,12 +16,13 @@ interface Supplier {
 
 export default function SuppliersPage() {
   const t = useT();
+  const { can } = usePerms();
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
 
   const suppliers = useQuery({
     queryKey: ["suppliers"],
-    queryFn: async () => (await fetch("/api/suppliers")).json() as Promise<Supplier[]>,
+    queryFn: () => getJson<Supplier[]>("/api/suppliers"),
   });
 
   return (
@@ -30,7 +32,7 @@ export default function SuppliersPage() {
           <h1 className="text-2xl font-semibold">{t("sup.title")}</h1>
           <p className="text-sm text-slate-500">{t("sup.subtitle")}</p>
         </div>
-        <Button onClick={() => setOpen(true)}>+ {t("sup.new")}</Button>
+        {can("ap:manage") && <Button onClick={() => setOpen(true)}>+ {t("sup.new")}</Button>}
       </div>
 
       <Card className="overflow-hidden">

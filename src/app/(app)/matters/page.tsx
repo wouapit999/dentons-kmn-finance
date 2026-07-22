@@ -57,7 +57,7 @@ export default function MattersPage() {
     queryKey: ["me"],
     queryFn: async () => (await fetch("/api/me")).json() as Promise<{ permissions: string[] }>,
   });
-  const canManage = me.data?.permissions.includes("matter:manage") ?? false;
+  const canManage = (me.data?.permissions ?? []).includes("matter:manage");
 
   const [rowError, setRowError] = useState<string | null>(null);
   const refresh = () => {
@@ -94,15 +94,17 @@ export default function MattersPage() {
           <h1 className="text-2xl font-semibold">{t("matters.title")}</h1>
           <p className="text-sm text-slate-500">{t("matters.subtitle")}</p>
         </div>
-        <Button
-          onClick={() => {
-            // Always refetch options so clients created moments ago appear.
-            qc.invalidateQueries({ queryKey: ["matters-meta"] });
-            setOpen(true);
-          }}
-        >
-          + {t("matters.new")}
-        </Button>
+        {canManage && (
+          <Button
+            onClick={() => {
+              // Always refetch options so clients created moments ago appear.
+              qc.invalidateQueries({ queryKey: ["matters-meta"] });
+              setOpen(true);
+            }}
+          >
+            + {t("matters.new")}
+          </Button>
+        )}
       </div>
 
       <Card className="overflow-hidden">

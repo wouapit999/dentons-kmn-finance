@@ -4,6 +4,7 @@ import { useForm } from "react-hook-form";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button, Input, Card, Badge } from "@/components/ui";
 import { useT } from "@/lib/useT";
+import { usePerms, getJson } from "@/lib/usePerms";
 import { formatMoney } from "@/lib/money";
 
 interface TimeEntry {
@@ -27,19 +28,20 @@ interface Meta { partners: { id: string; fullName: string }[] }
 
 export default function TimePage() {
   const t = useT();
+  const { can } = usePerms();
   const qc = useQueryClient();
 
   const data = useQuery({
     queryKey: ["time"],
-    queryFn: async () => (await fetch("/api/time")).json() as Promise<TimeData>,
+    queryFn: () => getJson<TimeData>("/api/time"),
   });
   const matters = useQuery({
     queryKey: ["matters"],
-    queryFn: async () => (await fetch("/api/matters")).json() as Promise<MatterOpt[]>,
+    queryFn: () => getJson<MatterOpt[]>("/api/matters"),
   });
   const meta = useQuery({
     queryKey: ["matters-meta"],
-    queryFn: async () => (await fetch("/api/matters/meta")).json() as Promise<Meta>,
+    queryFn: () => getJson<Meta>("/api/matters/meta"),
   });
 
   const { register, handleSubmit, reset } = useForm();
@@ -95,6 +97,7 @@ export default function TimePage() {
         </Card>
       </div>
 
+      {can("time:log") && (
       <Card className="p-5">
         <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500">{t("time.new")}</h2>
         <form onSubmit={handleSubmit((d) => log.mutate(d))} className="grid grid-cols-1 gap-3 sm:grid-cols-6">
@@ -141,6 +144,7 @@ export default function TimePage() {
           {error && <p className="text-sm text-red-600 sm:col-span-6">{error}</p>}
         </form>
       </Card>
+      )}
 
       <Card className="overflow-hidden">
         <table className="w-full text-sm">

@@ -41,9 +41,9 @@ export default function InvoicesPage() {
     queryKey: ["me"],
     queryFn: async () => (await fetch("/api/me")).json() as Promise<{ permissions: string[] }>,
   });
-  const canCreate = me.data?.permissions.includes("invoice:create") ?? false;
-  const canReceipt = me.data?.permissions.includes("payment:create") ?? false;
-  const canPost = me.data?.permissions.includes("invoice:approve") ?? false;
+  const canCreate = (me.data?.permissions ?? []).includes("invoice:create");
+  const canReceipt = (me.data?.permissions ?? []).includes("payment:create");
+  const canPost = (me.data?.permissions ?? []).includes("invoice:approve");
 
   const invoices = useQuery({
     queryKey: ["invoices"],

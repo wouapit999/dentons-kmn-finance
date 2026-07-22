@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button, Card, Badge } from "@/components/ui";
 import { useT } from "@/lib/useT";
+import { usePerms, getJson } from "@/lib/usePerms";
 import { formatMoney } from "@/lib/money";
 
 interface TrustAccount {
@@ -20,9 +21,10 @@ export default function TrustPage() {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
 
+  const { can } = usePerms();
   const accounts = useQuery({
     queryKey: ["trust"],
-    queryFn: async () => (await fetch("/api/trust")).json() as Promise<TrustAccount[]>,
+    queryFn: () => getJson<TrustAccount[]>("/api/trust"),
   });
 
   return (
@@ -32,7 +34,7 @@ export default function TrustPage() {
           <h1 className="text-2xl font-semibold">{t("trust.title")}</h1>
           <p className="text-sm text-slate-500">{t("trust.subtitle")}</p>
         </div>
-        <Button onClick={() => setOpen(true)}>+ {t("trust.new")}</Button>
+        {can("trust:manage") && <Button onClick={() => setOpen(true)}>+ {t("trust.new")}</Button>}
       </div>
 
       <Card className="overflow-hidden">
@@ -86,7 +88,7 @@ function OpenAccountDialog({ onClose, onCreated }: { onClose: () => void; onCrea
   const [error, setError] = useState<string | null>(null);
   const meta = useQuery({
     queryKey: ["trust-meta"],
-    queryFn: async () => (await fetch("/api/trust/meta")).json() as Promise<{ clients: { id: string; name: string }[] }>,
+    queryFn: () => getJson<{ clients: { id: string; name: string }[] }>("/api/trust/meta"),
   });
 
   const create = useMutation({

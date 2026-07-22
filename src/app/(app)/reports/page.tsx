@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Button, Card, Badge } from "@/components/ui";
 import { useT } from "@/lib/useT";
+import { usePerms, getJson } from "@/lib/usePerms";
 import { formatMoney } from "@/lib/money";
 
 type Tab = "income" | "balance" | "ar" | "ap";
@@ -22,6 +23,7 @@ function downloadCsv(filename: string, rows: (string | number)[][]) {
 
 export default function ReportsPage() {
   const t = useT();
+  const { can } = usePerms();
   const [tab, setTab] = useState<Tab>("income");
 
   const tabs: { key: Tab; label: string }[] = [
@@ -61,11 +63,12 @@ export default function ReportsPage() {
 
 function Section({ title, children, onExport }: { title: string; children: React.ReactNode; onExport?: () => void }) {
   const t = useT();
+  const { can } = usePerms();
   return (
     <Card className="p-5">
       <div className="mb-3 flex items-center justify-between">
         <h2 className="text-lg font-semibold">{title}</h2>
-        {onExport && <Button size="sm" variant="outline" onClick={onExport}>{t("rep.export")}</Button>}
+        {onExport && can("report:export") && <Button size="sm" variant="outline" onClick={onExport}>{t("rep.export")}</Button>}
       </div>
       {children}
     </Card>
@@ -83,7 +86,7 @@ function IncomeStatement() {
   const t = useT();
   const q = useQuery({
     queryKey: ["rep-income"],
-    queryFn: async () => (await fetch("/api/reports/income-statement")).json() as Promise<any>,
+    queryFn: () => getJson<any>("/api/reports/income-statement"),
   });
   const d = q.data;
   return (
@@ -121,7 +124,7 @@ function BalanceSheet() {
   const t = useT();
   const q = useQuery({
     queryKey: ["rep-balance"],
-    queryFn: async () => (await fetch("/api/reports/balance-sheet")).json() as Promise<any>,
+    queryFn: () => getJson<any>("/api/reports/balance-sheet"),
   });
   const d = q.data;
   return (
@@ -172,7 +175,7 @@ function Aging({ kind }: { kind: "ar" | "ap" }) {
   const q = useQuery({
     queryKey: ["rep-aging", kind],
     queryFn: async () =>
-      (await fetch(`/api/reports/${kind === "ar" ? "aged-receivables" : "aged-payables"}`)).json() as Promise<any>,
+      getJson<any>(`/api/reports/${kind === "ar" ? "aged-receivables" : "aged-payables"}`),
   });
   const d = q.data;
   const nameCol = kind === "ar" ? t("inv.client") : t("bill.supplier");

@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button, Input, Card, Badge } from "@/components/ui";
 import { useT } from "@/lib/useT";
+import { usePerms, getJson } from "@/lib/usePerms";
 import { formatMoney } from "@/lib/money";
 
 interface Run {
@@ -25,6 +26,7 @@ interface RunDetail {
 
 export default function PayrollPage() {
   const t = useT();
+  const { can } = usePerms();
   const qc = useQueryClient();
   const [period, setPeriod] = useState("");
   const [viewId, setViewId] = useState<string | null>(null);
@@ -32,7 +34,7 @@ export default function PayrollPage() {
 
   const runs = useQuery({
     queryKey: ["payroll"],
-    queryFn: async () => (await fetch("/api/payroll")).json() as Promise<Run[]>,
+    queryFn: () => getJson<Run[]>("/api/payroll"),
   });
 
   const createRun = useMutation({
@@ -70,7 +72,7 @@ export default function PayrollPage() {
             <label className="mb-1 block text-xs font-medium">{t("pr.period")}</label>
             <Input placeholder="July 2026" value={period} onChange={(e) => setPeriod(e.target.value)} />
           </div>
-          <Button disabled={period.length < 3 || createRun.isPending} onClick={() => createRun.mutate()}>{t("pr.new")}</Button>
+          {can("payroll:manage") && <Button disabled={period.length < 3 || createRun.isPending} onClick={() => createRun.mutate()}>{t("pr.new")}</Button>}
         </div>
         {error && <p className="mt-2 text-sm text-red-600">{error === "no_active_employees" ? "Add employees first." : error}</p>}
       </Card>
@@ -104,7 +106,7 @@ export default function PayrollPage() {
                 <td className="px-4 py-2.5">
                   <div className="flex justify-end gap-2">
                     <Button size="sm" variant="outline" onClick={() => setViewId(r.id)}>{t("pr.view")}</Button>
-                    {!r.posted && (
+                    {!r.posted && can("payroll:post") && (
                       <Button size="sm" disabled={post.isPending} onClick={() => post.mutate(r.id)}>{t("pr.post")}</Button>
                     )}
                   </div>
@@ -124,7 +126,7 @@ function RunDetailDialog({ id, onClose }: { id: string; onClose: () => void }) {
   const t = useT();
   const detail = useQuery({
     queryKey: ["payroll", id],
-    queryFn: async () => (await fetch(`/api/payroll/${id}`)).json() as Promise<RunDetail>,
+    queryFn: () => getJson<RunDetail>(`/api/payroll/${id}`),
   });
   const d = detail.data;
 

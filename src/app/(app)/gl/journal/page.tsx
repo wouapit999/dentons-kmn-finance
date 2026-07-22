@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button, Input, Card, Badge } from "@/components/ui";
 import { useT } from "@/lib/useT";
+import { usePerms, getJson } from "@/lib/usePerms";
 import { formatMoney } from "@/lib/money";
 
 interface Meta {
@@ -26,19 +27,20 @@ const emptyLine = (): Line => ({ accountId: "", debit: "", credit: "", descripti
 
 export default function JournalPage() {
   const t = useT();
+  const { can } = usePerms();
   const qc = useQueryClient();
 
   const meta = useQuery({
     queryKey: ["gl-meta"],
-    queryFn: async () => (await fetch("/api/gl/journals")).json() as Promise<Meta>,
+    queryFn: () => getJson<Meta>("/api/gl/journals"),
   });
   const accounts = useQuery({
     queryKey: ["accounts"],
-    queryFn: async () => (await fetch("/api/gl/accounts")).json() as Promise<AccountOpt[]>,
+    queryFn: () => getJson<AccountOpt[]>("/api/gl/accounts"),
   });
   const entries = useQuery({
     queryKey: ["gl-entries"],
-    queryFn: async () => (await fetch("/api/gl/entries")).json() as Promise<EntryRow[]>,
+    queryFn: () => getJson<EntryRow[]>("/api/gl/entries"),
   });
 
   const [journalId, setJournalId] = useState("");
@@ -94,7 +96,7 @@ export default function JournalPage() {
     setLines((ls) => ls.map((l, idx) => (idx === i ? { ...l, ...patch } : l)));
   }
 
-  const canPost = journalId && periodId && totals.balanced && !post.isPending;
+  const canPost = can("gl:post") && journalId && periodId && totals.balanced && !post.isPending;
 
   return (
     <div className="space-y-6">

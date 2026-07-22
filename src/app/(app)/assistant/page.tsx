@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button, Input, Card, Badge } from "@/components/ui";
 import { useT } from "@/lib/useT";
+import { usePerms } from "@/lib/usePerms";
 import { formatMoney } from "@/lib/money";
 
 interface Extracted {
@@ -18,6 +19,7 @@ interface Extracted {
 
 export default function AssistantPage() {
   const t = useT();
+  const { can } = usePerms();
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState<string | null>(null);
 
@@ -63,8 +65,8 @@ export default function AssistantPage() {
         )}
       </Card>
 
-      <OcrCard />
-      <AiSettingsCard />
+      {can("ap:manage") && <OcrCard />}
+      {can("user:manage") && <AiSettingsCard />}
     </div>
   );
 }

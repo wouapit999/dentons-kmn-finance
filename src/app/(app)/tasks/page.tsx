@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button, Input, Card, Badge } from "@/components/ui";
 import { useT } from "@/lib/useT";
+import { getJson } from "@/lib/usePerms";
 
 interface TaskRow {
   id: string;
@@ -236,7 +237,7 @@ function NewTaskDialog({ onClose, onCreated }: { onClose: () => void; onCreated:
 
   const meta = useQuery({
     queryKey: ["tasks-meta"],
-    queryFn: async () => (await fetch("/api/tasks/meta")).json() as Promise<Meta>,
+    queryFn: () => getJson<Meta>("/api/tasks/meta"),
   });
   const isCourt = meta.data?.categories.find((c) => c.key === form.categoryKey)?.isCourtDeadline;
 

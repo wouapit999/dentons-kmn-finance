@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button, Input, Card, Badge } from "@/components/ui";
 import { useT } from "@/lib/useT";
+import { usePerms, getJson } from "@/lib/usePerms";
 import { formatMoney } from "@/lib/money";
 
 interface BankAccount { id: string; name: string; bankName: string | null; glAccountCode: string; bookBalance: number; clearedBalance: number; transactions: number }
@@ -15,13 +16,14 @@ export default function BankPage() {
   const [openNew, setOpenNew] = useState(false);
   const [txnFor, setTxnFor] = useState<BankAccount | null>(null);
   const [viewId, setViewId] = useState<string | null>(null);
-  const accounts = useQuery({ queryKey: ["bank"], queryFn: async () => (await fetch("/api/bank")).json() as Promise<BankAccount[]> });
+  const { can } = usePerms();
+  const accounts = useQuery({ queryKey: ["bank"], queryFn: () => getJson<BankAccount[]>("/api/bank") });
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div><h1 className="text-2xl font-semibold">{t("bank.title")}</h1><p className="text-sm text-slate-500">{t("bank.subtitle")}</p></div>
-        <Button onClick={() => setOpenNew(true)}>+ {t("bank.new")}</Button>
+        {can("bank:manage") && <Button onClick={() => setOpenNew(true)}>+ {t("bank.new")}</Button>}
       </div>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {accounts.data?.map((a) => (
@@ -31,8 +33,8 @@ export default function BankPage() {
             <div className="mt-2 text-2xl font-semibold">{formatMoney(a.bookBalance)}</div>
             <div className="text-xs text-slate-400">{t("bank.cleared")}: {formatMoney(a.clearedBalance)}</div>
             <div className="mt-3 flex gap-2">
-              <Button size="sm" variant="outline" onClick={() => setTxnFor(a)}>{t("bank.record")}</Button>
-              <Button size="sm" variant="ghost" onClick={() => setViewId(a.id)}>{t("bank.reconcile")}</Button>
+              {can("bank:manage") && <Button size="sm" variant="outline" onClick={() => setTxnFor(a)}>{t("bank.record")}</Button>}
+              {can("bank:reconcile") && <Button size="sm" variant="ghost" onClick={() => setViewId(a.id)}>{t("bank.reconcile")}</Button>}
             </div>
           </Card>
         ))}
@@ -77,7 +79,7 @@ function TxnDialog({ acct, onClose, onDone }: { acct: BankAccount; onClose: () =
   const [description, setDescription] = useState("");
   const [counterpart, setCounterpart] = useState("");
   const [err, setErr] = useState<string | null>(null);
-  const meta = useQuery({ queryKey: ["bank-meta"], queryFn: async () => (await fetch("/api/bank/meta")).json() as Promise<Meta> });
+  const meta = useQuery({ queryKey: ["bank-meta"], queryFn: () => getJson<Meta>("/api/bank/meta") });
   const save = useMutation({
     mutationFn: async () => { const r = await fetch("/api/bank/transactions", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ bankAccountId: acct.id, date: new Date().toISOString().slice(0, 10), type, amount, description, counterpartAccountCode: counterpart }) }); if (!r.ok) { const b = await r.json().catch(() => ({})); throw new Error(b.error || "failed"); } },
     onSuccess: onDone, onError: (e: Error) => setErr(e.message),
@@ -107,7 +109,7 @@ function TxnDialog({ acct, onClose, onDone }: { acct: BankAccount; onClose: () =
 function ReconcileDialog({ id, onClose, onChange }: { id: string; onClose: () => void; onChange: () => void }) {
   const t = useT();
   const qc = useQueryClient();
-  const detail = useQuery({ queryKey: ["bank", id], queryFn: async () => (await fetch(`/api/bank/${id}`)).json() as Promise<Detail> });
+  const detail = useQuery({ queryKey: ["bank", id], queryFn: () => getJson<Detail>(`/api/bank/${id}`) });
   const toggle = useMutation({
     mutationFn: async (v: { transactionId: string; reconciled: boolean }) => { const r = await fetch("/api/bank/reconcile", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(v) }); if (!r.ok) throw new Error(); },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["bank", id] }); onChange(); },

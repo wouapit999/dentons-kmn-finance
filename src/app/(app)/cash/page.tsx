@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button, Input, Card } from "@/components/ui";
 import { useT } from "@/lib/useT";
+import { usePerms, getJson } from "@/lib/usePerms";
 import { formatMoney } from "@/lib/money";
 
 interface CashAccount { id: string; name: string; glAccountCode: string; balance: number; currency: string; transactions: number }
@@ -14,13 +15,14 @@ export default function CashPage() {
   const [openNew, setOpenNew] = useState(false);
   const [txnFor, setTxnFor] = useState<CashAccount | null>(null);
 
-  const accounts = useQuery({ queryKey: ["cash"], queryFn: async () => (await fetch("/api/cash")).json() as Promise<CashAccount[]> });
+  const { can } = usePerms();
+  const accounts = useQuery({ queryKey: ["cash"], queryFn: () => getJson<CashAccount[]>("/api/cash") });
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div><h1 className="text-2xl font-semibold">{t("cash.title")}</h1><p className="text-sm text-slate-500">{t("cash.subtitle")}</p></div>
-        <Button onClick={() => setOpenNew(true)}>+ {t("cash.new")}</Button>
+        {can("cash:manage") && <Button onClick={() => setOpenNew(true)}>+ {t("cash.new")}</Button>}
       </div>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {accounts.data?.map((a) => (
@@ -28,7 +30,7 @@ export default function CashPage() {
             <div className="text-sm text-slate-500">{a.name}</div>
             <div className="mt-1 text-2xl font-semibold">{formatMoney(a.balance, a.currency)}</div>
             <div className="mt-1 text-xs text-slate-400">{a.glAccountCode} · {a.transactions} movements</div>
-            <Button size="sm" variant="outline" className="mt-3" onClick={() => setTxnFor(a)}>{t("cash.record")}</Button>
+            {can("cash:manage") && <Button size="sm" variant="outline" className="mt-3" onClick={() => setTxnFor(a)}>{t("cash.record")}</Button>}
           </Card>
         ))}
         {accounts.data?.length === 0 && <p className="text-slate-400">—</p>}
@@ -65,7 +67,7 @@ function TxnDialog({ acct, onClose, onDone }: { acct: CashAccount; onClose: () =
   const [description, setDescription] = useState("");
   const [counterpart, setCounterpart] = useState("");
   const [err, setErr] = useState<string | null>(null);
-  const meta = useQuery({ queryKey: ["cash-meta"], queryFn: async () => (await fetch("/api/cash/meta")).json() as Promise<Meta> });
+  const meta = useQuery({ queryKey: ["cash-meta"], queryFn: () => getJson<Meta>("/api/cash/meta") });
   const save = useMutation({
     mutationFn: async () => {
       const r = await fetch("/api/cash/transactions", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ cashAccountId: acct.id, date: new Date().toISOString().slice(0, 10), type, amount, description, counterpartAccountCode: counterpart }) });

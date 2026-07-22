@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button, Input, Card, Badge } from "@/components/ui";
 import { useT } from "@/lib/useT";
+import { getJson } from "@/lib/usePerms";
 import { formatMoney } from "@/lib/money";
 
 interface PR { id: string; number: string; description: string; amount: number; status: string; decisionNote: string | null; order: string | null }
@@ -14,9 +15,9 @@ export default function ProcurementPage() {
   const qc = useQueryClient();
   const [openNew, setOpenNew] = useState(false);
 
-  const prs = useQuery({ queryKey: ["procurement"], queryFn: async () => (await fetch("/api/procurement")).json() as Promise<PR[]> });
+  const prs = useQuery({ queryKey: ["procurement"], queryFn: () => getJson<PR[]>("/api/procurement") });
   const me = useQuery({ queryKey: ["me"], queryFn: async () => (await fetch("/api/me")).json() as Promise<{ permissions: string[] }> });
-  const canApprove = me.data?.permissions.includes("procure:approve");
+  const canApprove = (me.data?.permissions ?? []).includes("procure:approve");
 
   const act = useMutation({
     mutationFn: async (v: { id: string; action: "APPROVED" | "REJECTED" | "ORDER" }) => {

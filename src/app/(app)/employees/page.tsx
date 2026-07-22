@@ -4,6 +4,7 @@ import { useForm } from "react-hook-form";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button, Input, Card } from "@/components/ui";
 import { useT } from "@/lib/useT";
+import { usePerms, getJson } from "@/lib/usePerms";
 import { formatMoney } from "@/lib/money";
 
 interface Employee {
@@ -19,12 +20,13 @@ interface Employee {
 
 export default function EmployeesPage() {
   const t = useT();
+  const { can } = usePerms();
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
 
   const employees = useQuery({
     queryKey: ["employees"],
-    queryFn: async () => (await fetch("/api/employees")).json() as Promise<Employee[]>,
+    queryFn: () => getJson<Employee[]>("/api/employees"),
   });
 
   return (
@@ -34,7 +36,7 @@ export default function EmployeesPage() {
           <h1 className="text-2xl font-semibold">{t("emp.title")}</h1>
           <p className="text-sm text-slate-500">{t("emp.subtitle")}</p>
         </div>
-        <Button onClick={() => setOpen(true)}>+ {t("emp.new")}</Button>
+        {can("payroll:manage") && <Button onClick={() => setOpen(true)}>+ {t("emp.new")}</Button>}
       </div>
 
       <Card className="overflow-x-auto">

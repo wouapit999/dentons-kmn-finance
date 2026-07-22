@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button, Input, Card, Badge } from "@/components/ui";
 import { useT } from "@/lib/useT";
+import { usePerms, getJson } from "@/lib/usePerms";
 import { formatMoney } from "@/lib/money";
 
 interface Detail {
@@ -24,9 +25,10 @@ export default function TrustDetailPage() {
   const qc = useQueryClient();
   const { id } = useParams<{ id: string }>();
 
+  const { can } = usePerms();
   const acct = useQuery({
     queryKey: ["trust", id],
-    queryFn: async () => (await fetch(`/api/trust/${id}`)).json() as Promise<Detail>,
+    queryFn: () => getJson<Detail>(`/api/trust/${id}`),
   });
 
   const [type, setType] = useState("DEPOSIT");
@@ -82,6 +84,7 @@ export default function TrustDetailPage() {
             </Card>
           </div>
 
+          {can("trust:manage") && (
           <Card className="p-5">
             <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500">{t("trust.record")}</h2>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-5">
@@ -121,6 +124,7 @@ export default function TrustDetailPage() {
             </div>
             {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
           </Card>
+          )}
 
           <div>
             <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500">{t("trust.ledger")}</h2>

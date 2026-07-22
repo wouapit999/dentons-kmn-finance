@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button, Input, Card, Badge } from "@/components/ui";
 import { useT } from "@/lib/useT";
+import { usePerms, getJson } from "@/lib/usePerms";
 import { formatMoney } from "@/lib/money";
 
 interface Asset {
@@ -21,6 +22,7 @@ interface Asset {
 
 export default function AssetsPage() {
   const t = useT();
+  const { can } = usePerms();
   const qc = useQueryClient();
   const [creating, setCreating] = useState(false);
   const [disposeFor, setDisposeFor] = useState<Asset | null>(null);
@@ -28,7 +30,7 @@ export default function AssetsPage() {
 
   const assets = useQuery({
     queryKey: ["assets"],
-    queryFn: async () => (await fetch("/api/assets")).json() as Promise<Asset[]>,
+    queryFn: () => getJson<Asset[]>("/api/assets"),
   });
 
   return (
@@ -39,8 +41,8 @@ export default function AssetsPage() {
           <p className="text-sm text-slate-500">{t("fa.subtitle")}</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={() => setDepOpen(true)}>{t("fa.depreciate")}</Button>
-          <Button onClick={() => setCreating(true)}>+ {t("fa.new")}</Button>
+          {can("asset:post") && <Button variant="outline" onClick={() => setDepOpen(true)}>{t("fa.depreciate")}</Button>}
+          {can("asset:manage") && <Button onClick={() => setCreating(true)}>+ {t("fa.new")}</Button>}
         </div>
       </div>
 
@@ -75,7 +77,7 @@ export default function AssetsPage() {
                 <td className="px-4 py-2.5 text-slate-500">{a.monthsDepreciated}/{a.usefulLifeMonths}</td>
                 <td className="px-4 py-2.5"><Badge color={a.status === "ACTIVE" ? "green" : "slate"}>{a.status}</Badge></td>
                 <td className="px-4 py-2.5 text-right">
-                  {a.status === "ACTIVE" && (
+                  {a.status === "ACTIVE" && can("asset:manage") && (
                     <Button size="sm" variant="outline" onClick={() => setDisposeFor(a)}>{t("fa.dispose")}</Button>
                   )}
                 </td>
@@ -102,7 +104,7 @@ function NewAssetDialog({ onClose, onCreated }: { onClose: () => void; onCreated
   });
   const meta = useQuery({
     queryKey: ["assets-meta"],
-    queryFn: async () => (await fetch("/api/assets/meta")).json() as Promise<{ assetAccounts: { code: string; name: string }[] }>,
+    queryFn: () => getJson<{ assetAccounts: { code: string; name: string }[] }>("/api/assets/meta"),
   });
   const set = (k: string, v: any) => setForm((f) => ({ ...f, [k]: v }));
 

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button, Input, Card, Badge } from "@/components/ui";
 import { useT } from "@/lib/useT";
+import { getJson } from "@/lib/usePerms";
 import { CLIENT_DOC_MIMES } from "@/lib/constants";
 
 interface Client {
@@ -47,7 +48,7 @@ export default function ClientsPage() {
     queryKey: ["me"],
     queryFn: async () => (await fetch("/api/me")).json() as Promise<{ permissions: string[] }>,
   });
-  const canManage = me.data?.permissions.includes("client:manage") ?? false;
+  const canManage = (me.data?.permissions ?? []).includes("client:manage");
 
   return (
     <div className="space-y-6">
@@ -142,7 +143,7 @@ function IntakeWizard({ onClose, onCreated }: { onClose: () => void; onCreated: 
 
   const meta = useQuery({
     queryKey: ["clients-meta"],
-    queryFn: async () => (await fetch("/api/clients/meta")).json() as Promise<Meta>,
+    queryFn: () => getJson<Meta>("/api/clients/meta"),
   });
 
   function validateStep(s: number): string | null {

@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button, Input, Card, Badge } from "@/components/ui";
 import { useT } from "@/lib/useT";
+import { usePerms, getJson } from "@/lib/usePerms";
 import { formatMoney } from "@/lib/money";
 
 interface Bill {
@@ -28,13 +29,14 @@ const statusColor = (s: string) =>
 
 export default function BillsPage() {
   const t = useT();
+  const { can } = usePerms();
   const qc = useQueryClient();
   const [creating, setCreating] = useState(false);
   const [payFor, setPayFor] = useState<Bill | null>(null);
 
   const bills = useQuery({
     queryKey: ["bills"],
-    queryFn: async () => (await fetch("/api/bills")).json() as Promise<Bill[]>,
+    queryFn: () => getJson<Bill[]>("/api/bills"),
   });
 
   const post = useMutation({
@@ -52,7 +54,7 @@ export default function BillsPage() {
           <h1 className="text-2xl font-semibold">{t("bill.title")}</h1>
           <p className="text-sm text-slate-500">{t("bill.subtitle")}</p>
         </div>
-        <Button onClick={() => setCreating(true)}>+ {t("bill.new")}</Button>
+        {can("ap:manage") && <Button onClick={() => setCreating(true)}>+ {t("bill.new")}</Button>}
       </div>
 
       <Card className="overflow-x-auto">
@@ -87,10 +89,10 @@ export default function BillsPage() {
                 <td className="px-4 py-2.5"><Badge color={statusColor(b.status)}>{b.status}</Badge></td>
                 <td className="px-4 py-2.5">
                   <div className="flex justify-end gap-2">
-                    {!b.posted && (
+                    {!b.posted && can("ap:approve") && (
                       <Button size="sm" disabled={post.isPending} onClick={() => post.mutate(b.id)}>{t("bill.post")}</Button>
                     )}
-                    {b.posted && b.outstanding > 0 && (
+                    {b.posted && b.outstanding > 0 && can("ap:approve") && (
                       <Button size="sm" variant="outline" onClick={() => setPayFor(b)}>{t("bill.pay")}</Button>
                     )}
                   </div>
@@ -123,7 +125,7 @@ function NewBillDialog({ onClose, onCreated }: { onClose: () => void; onCreated:
 
   const meta = useQuery({
     queryKey: ["bills-meta"],
-    queryFn: async () => (await fetch("/api/bills/meta")).json() as Promise<Meta>,
+    queryFn: () => getJson<Meta>("/api/bills/meta"),
   });
 
   const vat = Math.round(form.amount * (form.vatRate / 100) * 100) / 100;

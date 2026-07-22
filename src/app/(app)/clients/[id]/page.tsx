@@ -44,7 +44,7 @@ export default function ClientFilePage() {
     queryKey: ["me"],
     queryFn: async () => (await fetch("/api/me")).json() as Promise<{ permissions: string[] }>,
   });
-  const canManage = me.data?.permissions.includes("client:manage") ?? false;
+  const canManage = (me.data?.permissions ?? []).includes("client:manage");
 
   const pf = useQuery({
     queryKey: ["client-portfolio", id],

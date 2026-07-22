@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button, Input, Card, Badge } from "@/components/ui";
 import { useT } from "@/lib/useT";
+import { usePerms, getJson } from "@/lib/usePerms";
 import { formatMoney } from "@/lib/money";
 
 interface Budget {
@@ -23,13 +24,14 @@ interface Detail {
 
 export default function BudgetsPage() {
   const t = useT();
+  const { can } = usePerms();
   const qc = useQueryClient();
   const [creating, setCreating] = useState(false);
   const [viewId, setViewId] = useState<string | null>(null);
 
   const budgets = useQuery({
     queryKey: ["budgets"],
-    queryFn: async () => (await fetch("/api/budgets")).json() as Promise<Budget[]>,
+    queryFn: () => getJson<Budget[]>("/api/budgets"),
   });
 
   return (
@@ -39,7 +41,7 @@ export default function BudgetsPage() {
           <h1 className="text-2xl font-semibold">{t("bud.title")}</h1>
           <p className="text-sm text-slate-500">{t("bud.subtitle")}</p>
         </div>
-        <Button onClick={() => setCreating(true)}>+ {t("bud.new")}</Button>
+        {can("budget:manage") && <Button onClick={() => setCreating(true)}>+ {t("bud.new")}</Button>}
       </div>
 
       <Card className="overflow-hidden">
@@ -86,7 +88,7 @@ function NewBudgetDialog({ onClose, onCreated }: { onClose: () => void; onCreate
 
   const meta = useQuery({
     queryKey: ["budgets-meta"],
-    queryFn: async () => (await fetch("/api/budgets/meta")).json() as Promise<{ accounts: { code: string; name: string }[] }>,
+    queryFn: () => getJson<{ accounts: { code: string; name: string }[] }>("/api/budgets/meta"),
   });
 
   const create = useMutation({
@@ -138,7 +140,7 @@ function VarianceDialog({ id, onClose }: { id: string; onClose: () => void }) {
   const t = useT();
   const q = useQuery({
     queryKey: ["budget", id],
-    queryFn: async () => (await fetch(`/api/budgets/${id}`)).json() as Promise<Detail>,
+    queryFn: () => getJson<Detail>(`/api/budgets/${id}`),
   });
   const d = q.data;
   return (

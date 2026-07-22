@@ -2,6 +2,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Card, Badge } from "@/components/ui";
 import { useT } from "@/lib/useT";
+import { getJson } from "@/lib/usePerms";
 import { formatMoney } from "@/lib/money";
 
 interface Insights {
@@ -16,7 +17,7 @@ interface Insights {
 
 export default function InsightsPage() {
   const t = useT();
-  const q = useQuery({ queryKey: ["insights"], queryFn: async () => (await fetch("/api/insights")).json() as Promise<Insights> });
+  const q = useQuery({ queryKey: ["insights"], queryFn: () => getJson<Insights>("/api/insights") });
   const d = q.data;
 
   return (
