@@ -4,20 +4,17 @@ import { requirePermission } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
-// GET /api/matters/meta — options for the matter form:
-// KYC-verified, non-blocked clients + practice areas + potential partners.
+// GET /api/matters/meta — options for the matter form. Returns ALL clients
+// with their KYC/conflict status so the UI can show ineligible ones disabled
+// with the reason (instead of silently hiding them, which reads as a bug).
+// The hard gate stays server-side in POST /api/matters.
 export async function GET() {
   return handle(async () => {
     const user = await requirePermission("matter:read");
     const [clients, practiceAreas, partners] = await Promise.all([
       prisma.client.findMany({
-        where: {
-          companyId: user.companyId,
-          deletedAt: null,
-          kycStatus: "VERIFIED",
-          conflictStatus: { not: "BLOCKED" },
-        },
-        select: { id: true, name: true },
+        where: { companyId: user.companyId, deletedAt: null },
+        select: { id: true, name: true, kycStatus: true, conflictStatus: true },
         orderBy: { name: "asc" },
       }),
       prisma.practiceArea.findMany({

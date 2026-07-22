@@ -14,11 +14,19 @@ interface Matter {
   practiceArea: string | null;
   partner: string | null;
 }
+interface MetaClient {
+  id: string;
+  name: string;
+  kycStatus: string;
+  conflictStatus: string;
+}
 interface Meta {
-  clients: { id: string; name: string }[];
+  clients: MetaClient[];
   practiceAreas: { id: string; name: string }[];
   partners: { id: string; fullName: string }[];
 }
+
+const isEligible = (c: MetaClient) => c.kycStatus === "VERIFIED" && c.conflictStatus !== "BLOCKED";
 
 const statusColor = (s: string) => (s === "OPEN" ? "green" : s === "ON_HOLD" ? "amber" : "slate");
 
@@ -47,7 +55,15 @@ export default function MattersPage() {
           <h1 className="text-2xl font-semibold">{t("matters.title")}</h1>
           <p className="text-sm text-slate-500">{t("matters.subtitle")}</p>
         </div>
-        <Button onClick={() => setOpen(true)}>+ {t("matters.new")}</Button>
+        <Button
+          onClick={() => {
+            // Always refetch options so clients created moments ago appear.
+            qc.invalidateQueries({ queryKey: ["matters-meta"] });
+            setOpen(true);
+          }}
+        >
+          + {t("matters.new")}
+        </Button>
       </div>
 
       <Card className="overflow-hidden">
@@ -127,6 +143,11 @@ function NewMatterDialog({
   });
 
   const noClients = !meta || meta.clients.length === 0;
+  const eligible = meta?.clients.filter(isEligible) ?? [];
+  const ineligible = meta?.clients.filter((c) => !isEligible(c)) ?? [];
+
+  const reason = (c: MetaClient) =>
+    c.conflictStatus === "BLOCKED" ? t("matters.conflictBlocked") : t("matters.kycPending");
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
@@ -138,9 +159,29 @@ function NewMatterDialog({
           <form onSubmit={handleSubmit((d) => create.mutate(d))} className="space-y-3">
             <div>
               <label className="mb-1 block text-sm font-medium">{t("matters.client")}</label>
-              <select className="h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm dark:border-slate-700 dark:bg-slate-900" {...register("clientId", { required: true })}>
-                {meta!.clients.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+              <select
+                className="h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm dark:border-slate-700 dark:bg-slate-900"
+                defaultValue=""
+                {...register("clientId", { required: true })}
+              >
+                <option value="" disabled>
+                  {t("matters.selectClient")}
+                </option>
+                {eligible.map((c) => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+                {ineligible.map((c) => (
+                  <option key={c.id} value="" disabled>
+                    {c.name} — {reason(c)}
+                  </option>
+                ))}
               </select>
+              {ineligible.length > 0 && (
+                <p className="mt-1 text-xs text-amber-600">{t("matters.kycHint")}</p>
+              )}
+              {eligible.length === 0 && (
+                <p className="mt-1 text-xs text-red-600">{t("matters.noEligible")}</p>
+              )}
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
