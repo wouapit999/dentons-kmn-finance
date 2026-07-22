@@ -93,7 +93,8 @@ export type UpdateClientInput = z.infer<typeof updateClientSchema>;
 
 export const createMatterSchema = z.object({
   clientId: z.string().uuid(),
-  code: z.string().min(2).max(30),
+  // Optional: the server assigns the next free M-YYYY-NNNNN when omitted.
+  code: z.string().min(2).max(30).optional().or(z.literal("")),
   name: z.string().min(2).max(160),
   practiceAreaId: z.string().uuid().optional().or(z.literal("")),
   responsiblePartnerId: z.string().uuid().optional().or(z.literal("")),

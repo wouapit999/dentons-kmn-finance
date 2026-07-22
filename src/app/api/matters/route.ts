@@ -48,26 +48,51 @@ export async function POST(req: NextRequest) {
     if (client.kycStatus !== "VERIFIED") throw new AuthError(422, "client_kyc_not_verified");
     if (client.conflictStatus === "BLOCKED") throw new AuthError(422, "client_conflict_blocked");
 
-    // Matter codes are unique per company — report a clash clearly rather than
-    // letting the DB constraint surface as a 500.
-    const clash = await prisma.matter.findFirst({
-      where: { companyId: user.companyId, code: input.code },
-      select: { id: true },
-    });
-    if (clash) throw new AuthError(409, "matter_code_exists");
+    // If the caller supplied a code it must be free; otherwise the server
+    // assigns the next one. Codes are unique per company.
+    if (input.code) {
+      const clash = await prisma.matter.findFirst({
+        where: { companyId: user.companyId, code: input.code },
+        select: { id: true },
+      });
+      if (clash) throw new AuthError(409, "matter_code_exists");
+    }
 
-    const created = await prisma.matter.create({
-      data: {
-        companyId: user.companyId,
-        clientId: client.id,
-        code: input.code,
-        name: input.name,
-        practiceAreaId: input.practiceAreaId || null,
-        responsiblePartnerId: input.responsiblePartnerId || null,
-        currency: input.currency,
-        createdById: user.id,
-      },
-    });
+    const nextCode = async () => {
+      const prefix = `M-${new Date().getFullYear()}-`;
+      const existing = await prisma.matter.findMany({
+        where: { companyId: user.companyId, code: { startsWith: prefix } },
+        select: { code: true },
+      });
+      const highest = existing.reduce((max, m) => {
+        const n = parseInt(m.code.slice(prefix.length).replace(/\D/g, ""), 10);
+        return Number.isFinite(n) && n > max ? n : max;
+      }, 0);
+      return `${prefix}${String(highest + 1).padStart(5, "0")}`;
+    };
+
+    const base = {
+      companyId: user.companyId,
+      clientId: client.id,
+      name: input.name,
+      practiceAreaId: input.practiceAreaId || null,
+      responsiblePartnerId: input.responsiblePartnerId || null,
+      currency: input.currency,
+      createdById: user.id,
+    };
+
+    // Retry on the unique constraint in case two matters are opened at once.
+    let created;
+    for (let attempt = 0; ; attempt++) {
+      const code = input.code || (await nextCode());
+      try {
+        created = await prisma.matter.create({ data: { ...base, code } });
+        break;
+      } catch (e) {
+        const isDup = (e as { code?: string })?.code === "P2002";
+        if (!isDup || input.code || attempt >= 4) throw e;
+      }
+    }
     await writeAudit({
       companyId: user.companyId,
       actorId: user.id,

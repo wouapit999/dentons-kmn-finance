@@ -46,7 +46,45 @@ export default function MattersPage() {
   });
   const meta = useQuery({
     queryKey: ["matters-meta"],
-    queryFn: async () => (await fetch("/api/matters/meta")).json() as Promise<Meta>,
+    queryFn: async () => {
+      const res = await fetch("/api/matters/meta");
+      if (!res.ok) throw new Error("failed");
+      return (await res.json()) as Meta;
+    },
+  });
+
+  const me = useQuery({
+    queryKey: ["me"],
+    queryFn: async () => (await fetch("/api/me")).json() as Promise<{ permissions: string[] }>,
+  });
+  const canManage = me.data?.permissions.includes("matter:manage") ?? false;
+
+  const [rowError, setRowError] = useState<string | null>(null);
+  const refresh = () => {
+    qc.invalidateQueries({ queryKey: ["matters"] });
+    qc.invalidateQueries({ queryKey: ["matters-meta"] });
+  };
+
+  const setStatus = useMutation({
+    mutationFn: async ({ id, status }: { id: string; status: string }) => {
+      const res = await fetch(`/api/matters/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      });
+      if (!res.ok) throw new Error(((await res.json().catch(() => ({}))) as any).error || "failed");
+    },
+    onSuccess: () => { setRowError(null); refresh(); },
+    onError: (e: Error) => setRowError(e.message),
+  });
+
+  const remove = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await fetch(`/api/matters/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error(((await res.json().catch(() => ({}))) as any).error || "failed");
+    },
+    onSuccess: () => { setRowError(null); refresh(); },
+    onError: (e: Error) => setRowError(e.message),
   });
 
   return (
@@ -77,6 +115,7 @@ export default function MattersPage() {
               <th className="px-4 py-3">{t("matters.area")}</th>
               <th className="px-4 py-3">{t("matters.partner")}</th>
               <th className="px-4 py-3">{t("matters.status")}</th>
+              {canManage && <th className="px-4 py-3 text-right">{t("common.actions")}</th>}
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -94,11 +133,43 @@ export default function MattersPage() {
                 <td className="px-4 py-2.5 text-slate-500">{m.practiceArea ?? "—"}</td>
                 <td className="px-4 py-2.5 text-slate-500">{m.partner ?? "—"}</td>
                 <td className="px-4 py-2.5"><Badge color={statusColor(m.status)}>{m.status}</Badge></td>
+                {canManage && (
+                  <td className="px-4 py-2.5">
+                    <div className="flex justify-end gap-2">
+                      {m.status !== "CLOSED" && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={setStatus.isPending}
+                          onClick={() => setStatus.mutate({ id: m.id, status: "CLOSED" })}
+                        >
+                          {t("matters.close")}
+                        </Button>
+                      )}
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={remove.isPending}
+                        onClick={() => {
+                          if (confirm(t("matters.confirmDelete"))) remove.mutate(m.id);
+                        }}
+                      >
+                        {t("common.delete")}
+                      </Button>
+                    </div>
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>
         </table>
       </Card>
+
+      {rowError && (
+        <p className="text-sm text-red-600">
+          {rowError === "matter_has_activity" ? t("matters.hasActivity") : rowError}
+        </p>
+      )}
 
       {open && (
         <NewMatterDialog
@@ -195,12 +266,10 @@ function NewMatterDialog({
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="mb-1 block text-sm font-medium">{t("matters.code")}</label>
-                <Input
-                  placeholder="M-2026-00001"
-                  autoComplete="off"
-                  defaultValue={meta?.suggestedCode ?? ""}
-                  {...register("code", { required: true })}
-                />
+                {/* Assigned by the server on create — read-only so browser
+                    autofill can never reintroduce an already-used code. */}
+                <Input value={meta?.suggestedCode ?? "—"} readOnly tabIndex={-1} className="bg-slate-100 text-slate-500 dark:bg-slate-800" />
+                <p className="mt-1 text-xs text-slate-400">{t("matters.codeAuto")}</p>
               </div>
               <div>
                 <label className="mb-1 block text-sm font-medium">{t("matters.area")}</label>
