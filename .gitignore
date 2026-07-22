@@ -40,3 +40,6 @@ Thumbs.db
 .vercel
 .env*
 !.env.example
+
+# knowledge graph output (generated)
+/graphify-out/

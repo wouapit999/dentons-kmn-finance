@@ -2,107 +2,107 @@
 
 Production-grade financial management / ERP for **Dentons KMN** (law firm, Cameroon; multi-office / multi-country ready).
 
-Built with **Next.js 14 (App Router) Â· TypeScript Â· TailwindCSS Â· Prisma Â· React Query Â· Zustand Â· React Hook Form Â· Zod Â· jose (JWT)**.
+Built with **Next.js 14 (App Router) · TypeScript · TailwindCSS · Prisma · React Query · Zustand · React Hook Form · Zod · jose (JWT)**.
 
 ## Status
 
-**All 16 modules are built, verified, and committed** â€” a real, compiling, deployable
+**All 16 modules are built, verified, and committed** — a real, compiling, deployable
 system, not a mockup. Every value-moving action posts double-entry to one balanced
 General Ledger and flows through to the financial statements.
 
-Modules: Auth/RBAC/Users Â· General Ledger Â· Client & Matter Â· Time & Disbursements Â·
-Billing/AR Â· Trust Accounting Â· Accounts Payable Â· Payroll & Cameroon Tax Â· Fixed Assets Â·
-Budgeting Â· Cash Management Â· Banking Â· Procurement Â· Reporting & Financial Statements Â·
+Modules: Auth/RBAC/Users · General Ledger · Client & Matter · Time & Disbursements ·
+Billing/AR · Trust Accounting · Accounts Payable · Payroll & Cameroon Tax · Fixed Assets ·
+Budgeting · Cash Management · Banking · Procurement · Reporting & Financial Statements ·
 Insights/Analytics (+ reference data).
 
-**Module 1 â€” Auth / RBAC / Users**
+**Module 1 — Auth / RBAC / Users**
 - Email/password login with server sessions (JWT in an httpOnly, `Secure`, `SameSite` cookie), failed-login lockout, logout.
 - **RBAC**: 13 seeded system roles, a permission registry (`resource:action`), server-enforced permission guards on every route.
 - **IT-Admin user management**: create / activate / deactivate users, assign roles, reset passwords (all audited).
 - **Immutable audit log** of material actions.
 - **Bilingual EN/FR** UI with live language switching (no re-login), dark/light mode, responsive role-aware navigation.
 
-**Module 2 â€” General Ledger**
+**Module 2 — General Ledger**
 - **Chart of Accounts**: SYSCOHADA/OHADA-based (Cameroon), IFRS-reportable, 31 seeded accounts; create accounts (`gl:manage`).
 - **Journal entries**: double-entry posting enforced **balanced** (debits = credits), against **open periods** and **postable accounts** only, in a DB transaction with sequential entry numbers.
 - **Immutable posted entries** + audit trail; **Trial Balance** report that ties out.
 - 6 journals, a fiscal year with 12 monthly periods seeded.
-- Verified: balanced entry posts âœ“, unbalanced rejected (422) âœ“, non-`gl:post` role denied (403) âœ“.
+- Verified: balanced entry posts ✓, unbalanced rejected (422) ✓, non-`gl:post` role denied (403) ✓.
 
-**Module 3 â€” Client & Matter Management**
+**Module 3 — Client & Matter Management**
 - **Client onboarding** with type (corporate/individual), **KYC status**, **AML risk**, and **conflict status**.
 - **Conflict checks**: name-overlap search across clients and matters, recorded and auditable; flags CLEAR / POTENTIAL.
-- **Matters**: opened against a client + practice area + responsible partner, with a **compliance gate** â€” a matter can only be opened for a **KYC-verified, non-conflict-blocked** client.
+- **Matters**: opened against a client + practice area + responsible partner, with a **compliance gate** — a matter can only be opened for a **KYC-verified, non-conflict-blocked** client.
 - Clients and Matters screens (EN/FR, dark mode); 6 practice areas + sample data seeded.
-- Verified: KYC gate blocks matters (422) âœ“, conflict check flags overlaps (POTENTIAL) âœ“, `client:manage` enforced (403 without) âœ“.
+- Verified: KYC gate blocks matters (422) ✓, conflict check flags overlaps (POTENTIAL) ✓, `client:manage` enforced (403 without) ✓.
 
-**Module 5 â€” Time & Disbursements**
-- **Time entries** by matter and fee earner, billable/non-billable, with **server-computed value** (minutes Ã· 60 Ã— rate) and a **billable-hours / value summary**.
+**Module 5 — Time & Disbursements**
+- **Time entries** by matter and fee earner, billable/non-billable, with **server-computed value** (minutes ÷ 60 × rate) and a **billable-hours / value summary**.
 - **Disbursements**: matter costs with vendor, billable flag, and billable-total summary.
 - Guarded so time/costs can't be booked to a **closed** matter; `time:log` / `disbursement:log` enforced.
 - Time Entries and Disbursements screens (EN/FR, dark mode); sample data seeded.
-- Verified: value computed correctly (150 min @ 80,000 = 200,000) âœ“, non-`time:log` role denied (403) âœ“, invalid matter rejected (422) âœ“.
+- Verified: value computed correctly (150 min @ 80,000 = 200,000) ✓, non-`time:log` role denied (403) ✓, invalid matter rejected (422) ✓.
 
-**Module 6 â€” Billing / Accounts Receivable**
+**Module 6 — Billing / Accounts Receivable**
 - **Invoices** built from unbilled time + disbursements (+ manual lines), with **Cameroon VAT (19.25%)** and **withholding tax**; billed items are locked so they can't be double-invoiced.
-- **Post to the General Ledger**: a balanced entry (Dr AR + WHT receivable = Cr fees + disbursement recoveries + VAT collected), reusing the Module 2 ledger â€” the trial balance stays balanced.
-- **Receipts** against posted invoices (bank/cash/cheque/transfer/mobile) post Dr Bank/Cash = Cr AR, track part-paid â†’ paid, and block overpayment.
+- **Post to the General Ledger**: a balanced entry (Dr AR + WHT receivable = Cr fees + disbursement recoveries + VAT collected), reusing the Module 2 ledger — the trial balance stays balanced.
+- **Receipts** against posted invoices (bank/cash/cheque/transfer/mobile) post Dr Bank/Cash = Cr AR, track part-paid → paid, and block overpayment.
 - Invoices screen with create/post/receipt flows (EN/FR, dark mode).
-- Verified: totals exact (subtotal 487,500 â†’ total 562,781.25) âœ“, GL & trial balance tie âœ“, part-paidâ†’paid âœ“, overpayment (422) âœ“, `invoice:create` enforced (403) âœ“.
+- Verified: totals exact (subtotal 487,500 → total 562,781.25) ✓, GL & trial balance tie ✓, part-paid→paid ✓, overpayment (422) ✓, `invoice:create` enforced (403) ✓.
 
-**Module 7 â€” Trust Accounting** (law-firm compliance)
-- **Segregated client money**: per-client trust ledger (append-only) mirrored in the GL by a dedicated **trust bank (522000)** and **client-trust-liability (462000)** account â€” never commingled with firm funds.
+**Module 7 — Trust Accounting** (law-firm compliance)
+- **Segregated client money**: per-client trust ledger (append-only) mirrored in the GL by a dedicated **trust bank (522000)** and **client-trust-liability (462000)** account — never commingled with firm funds.
 - **Non-negative invariant**: a client's trust balance can never go negative (payments/applications exceeding the balance are rejected).
-- **Deposit / Payment / Apply-to-invoice**: applying held funds settles a firm invoice via one balanced entry (trust liability â†“, AR â†“, operating bank â†‘, trust bank â†“) and records a `TRUST` receipt.
+- **Deposit / Payment / Apply-to-invoice**: applying held funds settles a firm invoice via one balanced entry (trust liability ↓, AR ↓, operating bank ↑, trust bank ↓) and records a `TRUST` receipt.
 - Trust Accounts list + per-account ledger screens (EN/FR, dark mode).
-- Verified: deposit updates balance âœ“, over-withdrawal rejected (422) âœ“, apply-to-invoice â†’ invoice PAID + trial balance ties âœ“, `trust:manage`/`trust:read` enforced (403) âœ“.
+- Verified: deposit updates balance ✓, over-withdrawal rejected (422) ✓, apply-to-invoice → invoice PAID + trial balance ties ✓, `trust:manage`/`trust:read` enforced (403) ✓.
 
-**Module 8 â€” Accounts Payable**
-- **Suppliers**, **vendor bills** (with input VAT deductible against a chosen expense account), and **vendor payments** â€” the mirror of Billing/AR.
-- Post bill â†’ GL (Dr expense + Dr input VAT (445200) = Cr suppliers/AP (401000)); pay bill â†’ GL (Dr AP = Cr bank/cash); part-paid â†’ paid, overpayment blocked.
+**Module 8 — Accounts Payable**
+- **Suppliers**, **vendor bills** (with input VAT deductible against a chosen expense account), and **vendor payments** — the mirror of Billing/AR.
+- Post bill → GL (Dr expense + Dr input VAT (445200) = Cr suppliers/AP (401000)); pay bill → GL (Dr AP = Cr bank/cash); part-paid → paid, overpayment blocked.
 - Suppliers + Accounts Payable screens (EN/FR, dark mode); `ap:read` / `ap:manage` / `ap:approve` role split.
-- Verified: bill 500,000 + VAT 96,250 = 596,250, trial balance ties âœ“, partâ†’full payment âœ“, overpayment (422) âœ“, auditor (read-only) denied create/pay (403) âœ“.
+- Verified: bill 500,000 + VAT 96,250 = 596,250, trial balance ties ✓, part→full payment ✓, overpayment (422) ✓, auditor (read-only) denied create/pay (403) ✓.
 
-**Module 14 â€” Payroll & Cameroon Tax**
-- **Employee master** + **payroll runs** that compute a payslip per employee using real Cameroon rules â€” **CNPS** (4.2% employee, employer pension/family/risk, 750k ceiling), **IRPP** (progressive bands on 70%-abated taxable), **CAC** (10% of IRPP), **CRTV/RAV** (bracket table), **CrÃ©dit Foncier** (1%/1.5%), **FNE** (1%). All rates in one configurable file (`src/lib/payroll.ts`).
+**Module 14 — Payroll & Cameroon Tax**
+- **Employee master** + **payroll runs** that compute a payslip per employee using real Cameroon rules — **CNPS** (4.2% employee, employer pension/family/risk, 750k ceiling), **IRPP** (progressive bands on 70%-abated taxable), **CAC** (10% of IRPP), **CRTV/RAV** (bracket table), **Crédit Foncier** (1%/1.5%), **FNE** (1%). All rates in one configurable file (`src/lib/payroll.ts`).
 - **Post payroll journal** to the GL: Dr salaries + employer charges = Cr net payable + CNPS payable + taxes payable (balanced).
 - Employees + Payroll screens with per-payslip breakdown and run totals (EN/FR, dark mode).
-- Verified by hand: Awa (gross 1,050,000) â†’ CNPS 31,500, IRPP 174,533, CAC 17,453, CRTV 9,750, CFC 10,500, net 806,264 âœ“; run posts balanced (2,408,690) âœ“; double-post (422) âœ“; `payroll:manage` enforced (403) âœ“.
+- Verified by hand: Awa (gross 1,050,000) → CNPS 31,500, IRPP 174,533, CAC 17,453, CRTV 9,750, CFC 10,500, net 806,264 ✓; run posts balanced (2,408,690) ✓; double-post (422) ✓; `payroll:manage` enforced (403) ✓.
 
-**Module 15 â€” Reporting & Financial Statements**
-- **Income Statement**, **Balance Sheet**, **Aged Receivables**, **Aged Payables** â€” all computed from POSTED ledger lines (single source of truth), with date filters and **CSV export**.
-- Balance sheet ties (Assets = Liabilities + Equity incl. period result); aged buckets 0â€“30 / 31â€“60 / 61â€“90 / 90+.
+**Module 15 — Reporting & Financial Statements**
+- **Income Statement**, **Balance Sheet**, **Aged Receivables**, **Aged Payables** — all computed from POSTED ledger lines (single source of truth), with date filters and **CSV export**.
+- Balance sheet ties (Assets = Liabilities + Equity incl. period result); aged buckets 0–30 / 31–60 / 61–90 / 90+.
 - Reports screen with tabbed views (EN/FR, dark mode); `report:read` gated.
-- Verified live: income statement revenue 887,500 / expenses 2,608,690; balance sheet balances (1,096,843.75 = 1,096,843.75); a past-due invoice correctly aged into 61â€“90 days.
+- Verified live: income statement revenue 887,500 / expenses 2,608,690; balance sheet balances (1,096,843.75 = 1,096,843.75); a past-due invoice correctly aged into 61–90 days.
 
-**Module 12 â€” Fixed Assets**
-- **Asset register** with cost, salvage, useful life; **straight-line depreciation** run that posts one journal (Dr depreciation expense 681000 = Cr accumulated depreciation 281000) and stops at costâˆ’salvage.
-- **Disposal** recognises gain/loss: Dr accumulated depreciation + Dr bank (proceeds) = Cr asset cost Â± gain (754000) / loss (654000).
+**Module 12 — Fixed Assets**
+- **Asset register** with cost, salvage, useful life; **straight-line depreciation** run that posts one journal (Dr depreciation expense 681000 = Cr accumulated depreciation 281000) and stops at cost−salvage.
+- **Disposal** recognises gain/loss: Dr accumulated depreciation + Dr bank (proceeds) = Cr asset cost ± gain (754000) / loss (654000).
 - Fixed Assets screen with register / depreciate / dispose (EN/FR, dark mode); `asset:read` / `asset:manage` / `asset:post` role split.
-- Verified: 1,200,000 over 36 mo â†’ 33,333.33/mo (NBV 1,166,666.67); disposal at 1,190,000 â†’ gain 23,333.33; trial balance ties after both; auditor denied depreciation (403).
+- Verified: 1,200,000 over 36 mo → 33,333.33/mo (NBV 1,166,666.67); disposal at 1,190,000 → gain 23,333.33; trial balance ties after both; auditor denied depreciation (403).
 
-**Module 13 â€” Budgeting**
+**Module 13 — Budgeting**
 - **Annual budgets** by account (revenue/expense) with **live budget-vs-actual variance** pulled from POSTED GL entries for the budget year.
 - Favourable/unfavourable logic per account type (under-budget expense = favourable; under-target revenue = unfavourable), with % used.
 - Budgets screen: create with dynamic account lines + variance view (EN/FR, dark mode); `budget:read` / `budget:manage`.
 - Verified: depreciation actual 33,333.33 vs budget 500,000 (6.67% used, favourable); revenue-under-target flagged unfavourable; cashier denied budget:read (403).
 
-**Module 9 â€” Cash Management**
+**Module 9 — Cash Management**
 - Petty-cash accounts + cash in/out posting to the GL (counterpart account chosen), with a **non-negative balance guard**.
-- Verified: in 500,000 / out 120,000 â†’ balance 380,000; overdraw â†’ 422.
+- Verified: in 500,000 / out 120,000 → balance 380,000; overdraw → 422.
 
-**Module 10 â€” Banking**
+**Module 10 — Banking**
 - Bank accounts + transactions (charge / interest / transfers) posting to the GL, plus **reconciliation** (tick cleared items; book vs cleared vs unreconciled).
-- Verified: charge âˆ’5,000 + interest +8,000 â†’ book 3,000; reconcile updates cleared/unreconciled; GL balanced.
+- Verified: charge −5,000 + interest +8,000 → book 3,000; reconcile updates cleared/unreconciled; GL balanced.
 
-**Module 11 â€” Procurement**
-- Purchase requests â†’ **approval workflow** â†’ purchase orders, with **segregation of duties** (a requester cannot approve their own request).
-- Verified: PR raised, self-approval â†’ 422, approve + PO issued.
+**Module 11 — Procurement**
+- Purchase requests → **approval workflow** → purchase orders, with **segregation of duties** (a requester cannot approve their own request).
+- Verified: PR raised, self-approval → 422, approve + PO issued.
 
-**Module 16 â€” Insights & Analytics**
+**Module 16 — Insights & Analytics**
 - Deterministic analytics from ledger data: **duplicate-bill detection** (same supplier + amount within 30 days), **cash-flow forecast** (AR inflows vs AP outflows by 30/60/90-day horizon), overdue alerts.
 - Verified: two identical bills flagged as a duplicate; forecast/alerts compute from live data.
-- OCR & natural-language reporting are documented extension points requiring an external AI provider (Claude API) â€” intentionally not wired in.
+- **OCR & natural-language reporting are live** (Anthropic Claude): the AI Assistant page answers finance questions grounded in real ledger figures and OCRs invoice images/PDFs to pre-fill bills. The API key is stored AES-256-GCM-encrypted in-app (AI Settings, IT Admin) or via `ANTHROPIC_API_KEY`.
 
 
 **Tasks Module (all users)**
@@ -112,6 +112,21 @@ Insights/Analytics (+ reference data).
 - **Automation** via Vercel Cron (`/api/cron/tasks`, `CRON_SECRET`): reminders, deduplicated overdue alerts, recurring-task generation, daily digests.
 - Tasks dashboard + detail screens (EN/FR, dark mode), notifications bell in the header; design in `docs/modules/tasks.md`.
 - Verified: 24 checks incl. dependency block (422), cycle rejection (422), private task hidden (list + 404), non-assignee complete (403), court-filing CRITICAL, TimeEntry sync, cron recurrence + overdue dedup, 17 audited actions.
+
+**Client Intake, KYC & Document Vault**
+- 3-step client intake wizard (identity → contact & engagement → documents with metadata scanning); unique client numbers (CL-YYYY-NNNNN).
+- Client file: billing portfolio, matters, invoices, trust balance, and a **document vault** (lawyers write via `client:manage`, others read-only).
+- **Online conflict questionnaire** (5 questions + name-overlap scan) filing a Conflict Report; **AI KYC internet screening** (sanctions/adverse media via Claude web search) filing a KYC Report with a risk rating.
+
+**Security & Password Management**
+- Self-service (`/security`): change password (min 12 chars, complexity, history, HIBP breach check), **TOTP 2FA**, recovery email, active-session revocation, sign-in activity log.
+- Admin (`/admin/security`, `security:admin`): reset passwords, force change at next login, lock/unlock, reset 2FA, edit the password policy — all audited.
+
+**Pinto — AI assistant (all users)**
+- Floating chat on every page: teaches the app step-by-step (tailored to the user's own permissions), answers **Cameroon / CEMAC / OHADA legal questions** with web-search-verified citations (general information, not formal advice).
+- **Generates downloadable documents** (PDF/DOCX): legal memos, jurisprudence notes, contracts, letters — and can file them straight into a client's record (lawyers only).
+- **Co-working**: creates/delegates/comments tasks conversationally under the user's own identity and permissions, with every action audited. By design Pinto has **no tools for financial engagement or IT administration** — it refuses and points to the right menu or person.
+
 ## Run locally
 
 ```bash
@@ -143,15 +158,15 @@ npm run dev                  # http://localhost:3000
 
 ## Deploying (internal web app)
 
-The app builds to a **standalone** server (`next.config.mjs` â†’ `output: "standalone"`).
+The app builds to a **standalone** server (`next.config.mjs` → `output: "standalone"`).
 
-### Option A â€” Vercel (fastest)
+### Option A — Vercel (fastest)
 See the step-by-step guide: **[docs/DEPLOY-VERCEL.md](docs/DEPLOY-VERCEL.md)**.
 In short: provision Postgres (Vercel Postgres / Neon / Supabase), import the repo, set
 `DB_PROVIDER=postgresql`, `DATABASE_URL`, and `AUTH_SECRET`. The repo's `vercel-build`
 script handles the provider switch, schema push, and seed automatically.
 
-### Option B â€” Docker (any host)
+### Option B — Docker (any host)
 ```bash
 docker build -t dkmn-finance .
 docker run -p 3000:3000 \
@@ -162,9 +177,10 @@ docker run -p 3000:3000 \
 Put it behind HTTPS (NGINX / your platform's TLS). The session cookie is `Secure`, so it
 **requires HTTPS** in production.
 
-> **Dev vs prod database:** local dev uses SQLite for zero-config. For production use
-> PostgreSQL (change the `datasource` provider in `prisma/schema.prisma`). All status fields
-> are portable strings, so no schema rewrite is needed.
+> **Dev vs prod database:** local dev uses SQLite for zero-config. Production uses
+> PostgreSQL — set `DB_PROVIDER=postgresql` and `scripts/db-provider.mjs` switches the
+> Prisma datasource automatically during `vercel-build`. All status fields are portable
+> strings, so no schema rewrite is needed.
 
 ## Guide
 

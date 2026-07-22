@@ -1,5 +1,14 @@
 # Security Design
 
+> **As-built note.** The principles below all shipped; some mechanisms differ in the build:
+> sessions are **jose JWTs in httpOnly `Secure` cookies backed by DB session rows** (revocable
+> server-side) rather than access+refresh token rotation; password hashing is **bcryptjs**
+> (pure JS) rather than argon2id; TOTP 2FA and the HIBP breach check are implemented
+> dependency-free in [`src/lib/security.ts`](../src/lib/security.ts); rate limiting relies on
+> the failed-login lockout counter rather than Redis. The shipped additions go beyond this
+> design: self-service security page, admin password management, session revocation UI, and
+> AES-256-GCM-encrypted in-app secrets. See [`01-architecture.md`](01-architecture.md) §8.
+
 Security is enforced **server-side, in depth**. The frontend hides what a user can't do; the backend *prevents* it. No authorization decision is ever trusted from the client.
 
 ## 1. Authentication

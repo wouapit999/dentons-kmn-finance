@@ -1,5 +1,14 @@
 # Data Model
 
+> **As-built note.** This is the original design document; the concepts (tenancy, audit,
+> soft delete, balanced ledger, sub-ledger→GL control) all shipped, but the concrete schema
+> lives in [`prisma/schema.prisma`](../prisma/schema.prisma) — the single source of truth.
+> Key deviations from the text below: primary keys are UUID **v4** (Prisma `uuid()`), not v7;
+> enum-like fields are **portable strings** (SQLite dev / Postgres prod), not DB enums;
+> Postgres **RLS is not used** (tenancy is enforced by `companyId` scoping in every query);
+> the system runs **single-currency (XAF)** — the multi-currency/FX model below is a
+> documented extension point. See [`01-architecture.md`](01-architecture.md) §8.
+
 ## 1. Conventions (apply to every table)
 
 | Convention | Rule |

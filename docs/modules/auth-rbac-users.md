@@ -1,5 +1,13 @@
 # Module 1 — Auth / RBAC / Users (Detailed Design)
 
+> **As-built note.** This module shipped and is live. The shipped shape: `src/lib/auth.ts`
+> (sessions, `CurrentUser`, `requireUser`/`requirePermission`), `src/lib/constants.ts`
+> (permission registry + 13 system roles), `/api/auth/*` + `/api/users` + `/api/me/*` routes,
+> and the Users/Roles/Security screens. Deviations from the text below: bcryptjs instead of
+> argon2id; cookie-JWT sessions backed by DB rows instead of refresh-token rotation; no
+> office-scoped roles yet (single office). 2FA (TOTP), password policy/history/breach checks,
+> and full audit shipped as designed. See [`01-architecture.md`](../01-architecture.md) §8.
+
 **Why first:** every other module's authorization, audit actor, approval routing, and tenant scoping depend on this. It is the proof-of-pattern for the whole system.
 
 ---
