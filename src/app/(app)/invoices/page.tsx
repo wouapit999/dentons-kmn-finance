@@ -37,9 +37,21 @@ export default function InvoicesPage() {
   const [creating, setCreating] = useState(false);
   const [receiptFor, setReceiptFor] = useState<Invoice | null>(null);
 
+  const me = useQuery({
+    queryKey: ["me"],
+    queryFn: async () => (await fetch("/api/me")).json() as Promise<{ permissions: string[] }>,
+  });
+  const canCreate = me.data?.permissions.includes("invoice:create") ?? false;
+  const canReceipt = me.data?.permissions.includes("payment:create") ?? false;
+  const canPost = me.data?.permissions.includes("invoice:approve") ?? false;
+
   const invoices = useQuery({
     queryKey: ["invoices"],
-    queryFn: async () => (await fetch("/api/invoices")).json() as Promise<Invoice[]>,
+    queryFn: async () => {
+      const res = await fetch("/api/invoices");
+      if (!res.ok) throw new Error("failed_to_load_invoices");
+      return (await res.json()) as Invoice[];
+    },
   });
 
   const post = useMutation({
@@ -57,7 +69,7 @@ export default function InvoicesPage() {
           <h1 className="text-2xl font-semibold">{t("inv.title")}</h1>
           <p className="text-sm text-slate-500">{t("inv.subtitle")}</p>
         </div>
-        <Button onClick={() => setCreating(true)}>+ {t("inv.new")}</Button>
+        {canCreate && <Button onClick={() => setCreating(true)}>+ {t("inv.new")}</Button>}
       </div>
 
       <Card className="overflow-x-auto">
@@ -92,12 +104,12 @@ export default function InvoicesPage() {
                 <td className="px-4 py-2.5"><Badge color={statusColor(i.status)}>{i.status}</Badge></td>
                 <td className="px-4 py-2.5">
                   <div className="flex justify-end gap-2">
-                    {!i.posted && (
+                    {!i.posted && canPost && (
                       <Button size="sm" disabled={post.isPending} onClick={() => post.mutate(i.id)}>
                         {t("inv.post")}
                       </Button>
                     )}
-                    {i.posted && i.outstanding > 0 && (
+                    {i.posted && i.outstanding > 0 && canReceipt && (
                       <Button size="sm" variant="outline" onClick={() => setReceiptFor(i)}>
                         {t("inv.receipt")}
                       </Button>
@@ -146,19 +158,28 @@ function NewInvoiceDialog({ onClose, onCreated }: { onClose: () => void; onCreat
 
   const matters = useQuery({
     queryKey: ["matters"],
-    queryFn: async () => (await fetch("/api/matters")).json() as Promise<MatterOpt[]>,
+    queryFn: async () => {
+      const res = await fetch("/api/matters");
+      if (!res.ok) throw new Error("failed");
+      return (await res.json()) as MatterOpt[];
+    },
   });
   const unbilled = useQuery({
     queryKey: ["unbilled", matterId],
     enabled: !!matterId,
-    queryFn: async () =>
-      (await fetch(`/api/billing/unbilled?matterId=${matterId}`)).json() as Promise<Unbilled>,
+    queryFn: async () => {
+      const res = await fetch(`/api/billing/unbilled?matterId=${matterId}`);
+      if (!res.ok) throw new Error("failed");
+      return (await res.json()) as Unbilled;
+    },
   });
 
-  const feeTotal =
-    unbilled.data?.time.filter((x) => selTime.includes(x.id)).reduce((s, x) => s + x.amount, 0) ?? 0;
-  const disbTotal =
-    unbilled.data?.disbursements.filter((x) => selDisb.includes(x.id)).reduce((s, x) => s + x.amount, 0) ?? 0;
+  // Defensive: only ever treat these as arrays, so a failed/partial response
+  // can never crash the render.
+  const timeItems = Array.isArray(unbilled.data?.time) ? unbilled.data!.time : [];
+  const disbItems = Array.isArray(unbilled.data?.disbursements) ? unbilled.data!.disbursements : [];
+  const feeTotal = timeItems.filter((x) => selTime.includes(x.id)).reduce((s, x) => s + x.amount, 0);
+  const disbTotal = disbItems.filter((x) => selDisb.includes(x.id)).reduce((s, x) => s + x.amount, 0);
   const subtotal = feeTotal + disbTotal;
   const vat = Math.round(subtotal * (vatRate / 100) * 100) / 100;
   const wht = Math.round(feeTotal * (whtRate / 100) * 100) / 100;
@@ -203,15 +224,21 @@ function NewInvoiceDialog({ onClose, onCreated }: { onClose: () => void; onCreat
           {matters.data?.map((m) => <option key={m.id} value={m.id}>{m.code} — {m.name}</option>)}
         </select>
 
+        {matterId && unbilled.isLoading && (
+          <p className="text-sm text-slate-400">{t("common.loading")}</p>
+        )}
+        {matterId && unbilled.isError && (
+          <p className="text-sm text-red-600">{t("inv.loadError")}</p>
+        )}
         {matterId && unbilled.data && (
           <>
-            {unbilled.data.time.length === 0 && unbilled.data.disbursements.length === 0 && (
+            {timeItems.length === 0 && disbItems.length === 0 && (
               <p className="text-sm text-amber-600">{t("inv.noUnbilled")}</p>
             )}
-            {unbilled.data.time.length > 0 && (
+            {timeItems.length > 0 && (
               <div className="mb-3">
                 <div className="mb-1 text-xs font-semibold uppercase text-slate-500">{t("inv.timeItems")}</div>
-                {unbilled.data.time.map((x) => (
+                {timeItems.map((x) => (
                   <label key={x.id} className="flex items-center gap-2 py-0.5 text-sm">
                     <input type="checkbox" checked={selTime.includes(x.id)}
                       onChange={(e) => setSelTime((s) => e.target.checked ? [...s, x.id] : s.filter((i) => i !== x.id))} />
@@ -221,10 +248,10 @@ function NewInvoiceDialog({ onClose, onCreated }: { onClose: () => void; onCreat
                 ))}
               </div>
             )}
-            {unbilled.data.disbursements.length > 0 && (
+            {disbItems.length > 0 && (
               <div className="mb-3">
                 <div className="mb-1 text-xs font-semibold uppercase text-slate-500">{t("inv.disbItems")}</div>
-                {unbilled.data.disbursements.map((x) => (
+                {disbItems.map((x) => (
                   <label key={x.id} className="flex items-center gap-2 py-0.5 text-sm">
                     <input type="checkbox" checked={selDisb.includes(x.id)}
                       onChange={(e) => setSelDisb((s) => e.target.checked ? [...s, x.id] : s.filter((i) => i !== x.id))} />
