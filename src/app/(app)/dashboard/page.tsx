@@ -6,8 +6,13 @@ import type { Locale } from "@/lib/constants";
 
 export const dynamic = "force-dynamic";
 
-const PLANNED_MODULES = [
+// Every module below is built and live. Nav visibility is still governed by
+// each user's permissions — this list simply reflects what the system does.
+const LIVE_MODULES = [
+  "Auth / RBAC / Users",
+  "General Ledger",
   "Client & Matter Management",
+  "Time & Disbursements",
   "Billing & Accounts Receivable",
   "Trust Accounting",
   "Accounts Payable",
@@ -16,7 +21,11 @@ const PLANNED_MODULES = [
   "Fixed Assets",
   "Budgeting",
   "Payroll & Cameroon Tax",
-  "Reporting & Dashboards",
+  "Reporting & Financial Statements",
+  "Insights & Analytics",
+  "Tasks",
+  "Security & Password Management",
+  "Pinto AI Assistant",
 ];
 
 export default async function DashboardPage() {
@@ -62,16 +71,13 @@ export default async function DashboardPage() {
           {t(locale, "dashboard.modules")}
         </h2>
         <div className="flex flex-wrap gap-2">
-          {PLANNED_MODULES.map((m) => (
-            <Badge key={m} color="slate">
-              {m} · {t(locale, "dashboard.comingSoon")}
+          {LIVE_MODULES.map((m) => (
+            <Badge key={m} color="green">
+              {m} · {t(locale, "dashboard.live")}
             </Badge>
           ))}
         </div>
-        <p className="mt-4 text-xs text-slate-400">
-          Auth / RBAC / Users is live. Remaining modules follow the roadmap in
-          docs/04-roadmap.md.
-        </p>
+        <p className="mt-4 text-xs text-slate-400">{t(locale, "dashboard.modulesNote")}</p>
       </Card>
     </div>
   );
