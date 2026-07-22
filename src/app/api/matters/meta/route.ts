@@ -28,6 +28,21 @@ export async function GET() {
         orderBy: { fullName: "asc" },
       }),
     ]);
-    return { clients, practiceAreas, partners };
+
+    // Suggest the next free matter code for this year (M-YYYY-NNNNN), so the
+    // form never defaults to one that already exists.
+    const year = new Date().getFullYear();
+    const prefix = `M-${year}-`;
+    const existing = await prisma.matter.findMany({
+      where: { companyId: user.companyId, code: { startsWith: prefix } },
+      select: { code: true },
+    });
+    const highest = existing.reduce((max, m) => {
+      const n = parseInt(m.code.slice(prefix.length).replace(/\D/g, ""), 10);
+      return Number.isFinite(n) && n > max ? n : max;
+    }, 0);
+    const suggestedCode = `${prefix}${String(highest + 1).padStart(5, "0")}`;
+
+    return { clients, practiceAreas, partners, suggestedCode };
   });
 }

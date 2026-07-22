@@ -24,6 +24,7 @@ interface Meta {
   clients: MetaClient[];
   practiceAreas: { id: string; name: string }[];
   partners: { id: string; fullName: string }[];
+  suggestedCode?: string;
 }
 
 const isEligible = (c: MetaClient) => c.kycStatus === "VERIFIED" && c.conflictStatus !== "BLOCKED";
@@ -142,6 +143,14 @@ function NewMatterDialog({
     onError: (e: Error) => setError(e.message),
   });
 
+  // Turn server error codes into readable guidance.
+  const errorText = (code: string) => {
+    if (code === "matter_code_exists" || code === "duplicate_value") return t("matters.codeExists");
+    if (code === "client_kyc_not_verified") return t("matters.kycPending");
+    if (code === "client_conflict_blocked") return t("matters.conflictBlocked");
+    return code;
+  };
+
   const noClients = !meta || meta.clients.length === 0;
   const eligible = meta?.clients.filter(isEligible) ?? [];
   const ineligible = meta?.clients.filter((c) => !isEligible(c)) ?? [];
@@ -186,7 +195,12 @@ function NewMatterDialog({
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="mb-1 block text-sm font-medium">{t("matters.code")}</label>
-                <Input placeholder="M-2026-001" {...register("code", { required: true })} />
+                <Input
+                  placeholder="M-2026-00001"
+                  autoComplete="off"
+                  defaultValue={meta?.suggestedCode ?? ""}
+                  {...register("code", { required: true })}
+                />
               </div>
               <div>
                 <label className="mb-1 block text-sm font-medium">{t("matters.area")}</label>
@@ -198,7 +212,7 @@ function NewMatterDialog({
             </div>
             <div>
               <label className="mb-1 block text-sm font-medium">{t("matters.name")}</label>
-              <Input {...register("name", { required: true })} />
+              <Input autoComplete="off" {...register("name", { required: true })} />
             </div>
             <div>
               <label className="mb-1 block text-sm font-medium">{t("matters.partner")}</label>
@@ -207,7 +221,7 @@ function NewMatterDialog({
                 {meta!.partners.map((p) => <option key={p.id} value={p.id}>{p.fullName}</option>)}
               </select>
             </div>
-            {error && <p className="text-sm text-red-600">{error}</p>}
+            {error && <p className="text-sm text-red-600">{errorText(error)}</p>}
             <div className="flex justify-end gap-2 pt-2">
               <Button type="button" variant="outline" onClick={onClose}>{t("common.cancel")}</Button>
               <Button type="submit" disabled={create.isPending}>{t("common.create")}</Button>

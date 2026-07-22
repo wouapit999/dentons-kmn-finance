@@ -48,6 +48,14 @@ export async function POST(req: NextRequest) {
     if (client.kycStatus !== "VERIFIED") throw new AuthError(422, "client_kyc_not_verified");
     if (client.conflictStatus === "BLOCKED") throw new AuthError(422, "client_conflict_blocked");
 
+    // Matter codes are unique per company — report a clash clearly rather than
+    // letting the DB constraint surface as a 500.
+    const clash = await prisma.matter.findFirst({
+      where: { companyId: user.companyId, code: input.code },
+      select: { id: true },
+    });
+    if (clash) throw new AuthError(409, "matter_code_exists");
+
     const created = await prisma.matter.create({
       data: {
         companyId: user.companyId,
