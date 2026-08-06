@@ -1,3 +1,9 @@
+/*
+ * Dentons KMN ERP
+ * Copyright (c) 2026 Bouquet Innovation SA. All rights reserved.
+ * Proprietary and confidential. Unauthorised copying, distribution, modification,
+ * or use of this file, via any medium, is strictly prohibited.
+ */
 // Dentons KMN brand mark, recreated as inline SVG so it scales crisply at any
 // size and renders identically in light and dark mode. Brand purple: #6D2077.
 export function Logo({ className }: { className?: string }) {

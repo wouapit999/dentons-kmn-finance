@@ -1,3 +1,9 @@
+/*
+ * Dentons KMN ERP
+ * Copyright (c) 2026 Bouquet Innovation SA. All rights reserved.
+ * Proprietary and confidential. Unauthorised copying, distribution, modification,
+ * or use of this file, via any medium, is strictly prohibited.
+ */
 import type { Prisma } from "@prisma/client";
 import { AuthError } from "./auth";
 

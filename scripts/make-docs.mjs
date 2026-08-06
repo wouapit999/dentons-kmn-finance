@@ -1,3 +1,9 @@
+/*
+ * Dentons KMN ERP
+ * Copyright (c) 2026 Bouquet Innovation SA. All rights reserved.
+ * Proprietary and confidential. Unauthorised copying, distribution, modification,
+ * or use of this file, via any medium, is strictly prohibited.
+ */
 // Standalone generator for the two shareable PDFs:
 //   1. User Acceptance Testing (UAT) test book
 //   2. End-user Guide

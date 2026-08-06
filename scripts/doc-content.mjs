@@ -1,3 +1,9 @@
+/*
+ * Dentons KMN ERP
+ * Copyright (c) 2026 Bouquet Innovation SA. All rights reserved.
+ * Proprietary and confidential. Unauthorised copying, distribution, modification,
+ * or use of this file, via any medium, is strictly prohibited.
+ */
 // Content for the two PDFs. Plain text with a tiny markdown subset:
 //   #/##/###  headings   |  - bullets  |  1. numbered  |  **bold**
 //   > note callout        |  @RESULT  UAT pass/fail row  |  [PAGEBREAK]

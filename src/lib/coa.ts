@@ -1,3 +1,9 @@
+/*
+ * Dentons KMN ERP
+ * Copyright (c) 2026 Bouquet Innovation SA. All rights reserved.
+ * Proprietary and confidential. Unauthorised copying, distribution, modification,
+ * or use of this file, via any medium, is strictly prohibited.
+ */
 // A starter SYSCOHADA (OHADA) chart of accounts for Cameroon, mapped to the
 // five IFRS-reportable account types. This is a practical subset; the full
 // plan can be extended via the Chart of Accounts screen (gl:manage).

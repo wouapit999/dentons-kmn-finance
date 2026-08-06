@@ -1,0 +1,33 @@
+Dentons KMN ERP — Proprietary Software License
+
+Copyright (c) 2026 Bouquet Innovation SA. All rights reserved.
+
+This software and its accompanying documentation, source code, designs, data
+models, and all related materials (collectively, the "Software") are the
+proprietary and confidential property of Bouquet Innovation SA (the "Owner").
+
+NO LICENSE IS GRANTED except by a separate, written agreement signed by the
+Owner (for example, a SaaS Subscription Agreement or an End-User License
+Agreement). In the absence of such an agreement, no rights are granted.
+
+You may NOT, without the Owner's prior written authorisation:
+  1. copy, reproduce, or distribute the Software or any part of it;
+  2. modify, adapt, translate, or create derivative works;
+  3. reverse-engineer, decompile, disassemble, or attempt to derive source
+     code, except to the limited extent such restriction is prohibited by
+     applicable law;
+  4. sublicense, sell, rent, lease, or otherwise transfer the Software;
+  5. remove or alter any proprietary notices.
+
+The Software is provided "AS IS", without warranty of any kind. To the maximum
+extent permitted by law, the Owner is not liable for any damages arising from
+its use.
+
+The Software contains TRADE SECRETS of the Owner. Unauthorised use or
+disclosure may result in civil and criminal liability.
+
+Third-party open-source components are used under their own licenses and are
+identified in the project's package manifest and lockfile; those licenses
+govern only those components, not the Software as a whole.
+
+Contact: Bouquet Innovation SA — legal/licensing enquiries.

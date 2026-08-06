@@ -1,3 +1,9 @@
+/*
+ * Dentons KMN ERP
+ * Copyright (c) 2026 Bouquet Innovation SA. All rights reserved.
+ * Proprietary and confidential. Unauthorised copying, distribution, modification,
+ * or use of this file, via any medium, is strictly prohibited.
+ */
 // Edge middleware. Three jobs, in order:
 //   1. HTTP-method hardening  - reject TRACE/DEBUG/CONNECT/MOVE/TRACK etc.
 //                               everywhere; allow only read verbs on page routes.

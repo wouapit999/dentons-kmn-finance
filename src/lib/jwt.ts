@@ -1,3 +1,9 @@
+/*
+ * Dentons KMN ERP
+ * Copyright (c) 2026 Bouquet Innovation SA. All rights reserved.
+ * Proprietary and confidential. Unauthorised copying, distribution, modification,
+ * or use of this file, via any medium, is strictly prohibited.
+ */
 // Edge-safe JWT helpers (jose only, no Node/Prisma imports).
 // Used by middleware (Edge runtime) and by the Node auth layer.
 import { SignJWT, jwtVerify, type JWTPayload } from "jose";

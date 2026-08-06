@@ -1,0 +1,24 @@
+Dentons KMN ERP
+Copyright (c) 2026 Bouquet Innovation SA. All rights reserved.
+
+This product is proprietary software owned by Bouquet Innovation SA and is
+provided only under a written license (see LICENSE). It is CONFIDENTIAL and
+contains TRADE SECRETS.
+
+"Dentons KMN" refers to a client of Bouquet Innovation SA and is used here to
+name the initial deployment only. Any commercial product derived from this
+software must be marketed under a distinct Bouquet Innovation SA brand and must
+not use third-party trademarks (including "Dentons") without authorisation.
+
+Third-party components:
+  This software incorporates open-source libraries (including Next.js, React,
+  Prisma, TailwindCSS, Zod, React Query, Zustand, jose, bcryptjs, pdf-lib, docx,
+  and the Anthropic SDK), each used under its respective open-source license.
+  A complete inventory is maintained in package.json and the lockfile. Those
+  licenses apply only to those components.
+
+Authorship & IP evidence:
+  - Full authored history is maintained in the Git version-control repository.
+  - The "Application Blueprint" document is the master technical/functional
+    specification and authorship record.
+  - This NOTICE, the LICENSE, and per-file copyright headers assert ownership.

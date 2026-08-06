@@ -1,3 +1,9 @@
+/*
+ * Dentons KMN ERP
+ * Copyright (c) 2026 Bouquet Innovation SA. All rights reserved.
+ * Proprietary and confidential. Unauthorised copying, distribution, modification,
+ * or use of this file, via any medium, is strictly prohibited.
+ */
 // Turn a Markdown-subset document (what Pinto produces) into a downloadable
 // DOCX or PDF. Pure-JS (docx + pdf-lib, standard fonts) so it runs on Vercel
 // serverless with no native binaries or bundled font files.

@@ -1,3 +1,9 @@
+/*
+ * Dentons KMN ERP
+ * Copyright (c) 2026 Bouquet Innovation SA. All rights reserved.
+ * Proprietary and confidential. Unauthorised copying, distribution, modification,
+ * or use of this file, via any medium, is strictly prohibited.
+ */
 // Rewrites the Prisma datasource provider based on DB_PROVIDER.
 // Local dev defaults to sqlite; Vercel/production sets DB_PROVIDER=postgresql.
 import { readFileSync, writeFileSync } from "node:fs";

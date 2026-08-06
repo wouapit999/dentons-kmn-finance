@@ -1,3 +1,9 @@
+/*
+ * Dentons KMN ERP
+ * Copyright (c) 2026 Bouquet Innovation SA. All rights reserved.
+ * Proprietary and confidential. Unauthorised copying, distribution, modification,
+ * or use of this file, via any medium, is strictly prohibited.
+ */
 // Security primitives for password management and MFA — no external deps.
 //  - Password policy validation (length, complexity, history, breach)
 //  - HaveIBeenPwned k-anonymity breached-password check

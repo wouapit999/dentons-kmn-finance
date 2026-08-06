@@ -1,3 +1,9 @@
+/*
+ * Dentons KMN ERP
+ * Copyright (c) 2026 Bouquet Innovation SA. All rights reserved.
+ * Proprietary and confidential. Unauthorised copying, distribution, modification,
+ * or use of this file, via any medium, is strictly prohibited.
+ */
 // Per-company settings store. Secret values (API keys) are encrypted at rest
 // with AES-256-GCM using a key derived from AUTH_SECRET, so a database dump
 // alone does not expose them.

@@ -1,3 +1,9 @@
+/*
+ * Dentons KMN ERP
+ * Copyright (c) 2026 Bouquet Innovation SA. All rights reserved.
+ * Proprietary and confidential. Unauthorised copying, distribution, modification,
+ * or use of this file, via any medium, is strictly prohibited.
+ */
 // Pinto's "co-working" tools. These let Pinto ACT in the app on the signed-in
 // user's behalf — but only for collaboration/task work, and always under the
 // user's own identity and permissions (Pinto can never do more than the user).
