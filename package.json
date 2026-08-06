@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "next dev",
     "build": "prisma generate && next build",
-    "vercel-build": "node scripts/db-provider.mjs && prisma generate && prisma db push --skip-generate && tsx prisma/seed.ts && next build",
+    "vercel-build": "node scripts/db-provider.mjs && prisma generate && tsx prisma/seed.ts && next build",
+    "db:push:prod": "node scripts/db-provider.mjs && prisma db push --skip-generate",
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
