@@ -1226,3 +1226,28 @@ model Notification {
 
   @@index([userId, readAt])
 }
+
+// Register of bilingual HR documents issued to staff (work attestations,
+// mission orders, invitation letters…). The row is the authority behind the
+// reference printed on the document: an embassy that calls the firm to check a
+// reference is answered from here. The rendered text is stored so a reissued
+// copy is byte-for-byte the document that was signed.
+model HrDocument {
+  id          String   @id @default(uuid())
+  companyId   String
+  reference   String
+  docType     String
+  year        Int
+  sequence    Int
+  subjectName String
+  purpose     String?
+  title       String
+  payload     String // JSON of the validated field values
+  markdown    String // rendered bilingual body, exactly as exported
+  issuedById  String?
+  issuedAt    DateTime @default(now())
+
+  @@unique([companyId, reference])
+  @@unique([companyId, docType, year, sequence])
+  @@index([companyId, issuedAt])
+}

@@ -30,6 +30,9 @@ export async function GET() {
       housingAllowance: Number(e.housingAllowance),
       transportAllowance: Number(e.transportAllowance),
       cnpsNo: e.cnpsNo,
+      // Used to pre-fill the employment start date on HR attestations.
+      hireDate: e.hireDate ? e.hireDate.toISOString().slice(0, 10) : null,
+      currency: e.currency,
     }));
   });
 }
