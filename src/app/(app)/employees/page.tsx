@@ -18,11 +18,13 @@ interface Employee {
   employeeNo: string;
   fullName: string;
   position: string | null;
-  baseSalary: number;
-  housingAllowance: number;
-  transportAllowance: number;
   cnpsNo: string | null;
-  bankAccount: string | null;
+  canSeePay?: boolean;
+  // Present only for compensation-authorised viewers.
+  baseSalary?: number;
+  housingAllowance?: number;
+  transportAllowance?: number;
+  bankAccount?: string | null;
 }
 
 export default function EmployeesPage() {
@@ -33,6 +35,7 @@ export default function EmployeesPage() {
   const [editing, setEditing] = useState<Employee | null>(null);
   const [rowError, setRowError] = useState<string | null>(null);
   const canManage = can("payroll:manage");
+  const canPay = can("payroll:compensation"); // HR, Managing Partner, IT, CFO only
 
   const employees = useQuery({
     queryKey: ["employees"],
@@ -51,6 +54,9 @@ export default function EmployeesPage() {
     onSuccess: (b) => { setRowError(b.archived ? t("emp.archivedMsg") : null); refresh(); },
     onError: (e: Error) => setRowError(e.message),
   });
+
+  // Columns: no / name / position / cnps, plus salary (authorised) and actions (manager).
+  const totalCols = 4 + (canPay ? 1 : 0) + (canManage ? 1 : 0);
 
   return (
     <div className="space-y-6">
@@ -71,24 +77,24 @@ export default function EmployeesPage() {
               <th className="px-4 py-3">{t("emp.no")}</th>
               <th className="px-4 py-3">{t("gl.name")}</th>
               <th className="px-4 py-3">{t("emp.position")}</th>
-              <th className="px-4 py-3 text-right">{t("emp.base")}</th>
+              {canPay && <th className="px-4 py-3 text-right">{t("emp.base")}</th>}
               <th className="px-4 py-3">{t("emp.cnps")}</th>
               {canManage && <th className="px-4 py-3 text-right">{t("common.actions")}</th>}
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
             {employees.isLoading && (
-              <tr><td colSpan={canManage ? 6 : 5} className="px-4 py-6 text-center text-slate-400">{t("common.loading")}</td></tr>
+              <tr><td colSpan={totalCols} className="px-4 py-6 text-center text-slate-400">{t("common.loading")}</td></tr>
             )}
             {employees.data?.length === 0 && (
-              <tr><td colSpan={canManage ? 6 : 5} className="px-4 py-6 text-center text-slate-400">—</td></tr>
+              <tr><td colSpan={totalCols} className="px-4 py-6 text-center text-slate-400">—</td></tr>
             )}
             {employees.data?.map((e) => (
               <tr key={e.id}>
                 <td className="px-4 py-2.5 font-mono">{e.employeeNo}</td>
                 <td className="px-4 py-2.5 font-medium">{e.fullName}</td>
                 <td className="px-4 py-2.5 text-slate-500">{e.position ?? "—"}</td>
-                <td className="px-4 py-2.5 text-right">{formatMoney(e.baseSalary)}</td>
+                {canPay && <td className="px-4 py-2.5 text-right">{formatMoney(e.baseSalary ?? 0)}</td>}
                 <td className="px-4 py-2.5 text-slate-500">{e.cnpsNo ?? "—"}</td>
                 {canManage && (
                   <td className="px-4 py-2.5">
@@ -110,30 +116,30 @@ export default function EmployeesPage() {
           </tbody>
         </table>
       </Card>
+      {!canPay && <p className="text-xs text-slate-400">{t("emp.payHidden")}</p>}
 
       {open && (
-        <EmployeeDialog onClose={() => setOpen(false)} onSaved={() => { setOpen(false); refresh(); }} />
+        <EmployeeDialog canPay={canPay} onClose={() => setOpen(false)} onSaved={() => { setOpen(false); refresh(); }} />
       )}
       {editing && (
-        <EmployeeDialog employee={editing} onClose={() => setEditing(null)} onSaved={() => { setEditing(null); refresh(); }} />
+        <EmployeeDialog canPay={canPay} employee={editing} onClose={() => setEditing(null)} onSaved={() => { setEditing(null); refresh(); }} />
       )}
     </div>
   );
 }
 
-// Shared create/edit dialog.
-function EmployeeDialog({ employee, onClose, onSaved }: { employee?: Employee; onClose: () => void; onSaved: () => void }) {
+// Shared create/edit dialog. Salary/allowance/bank shown only when canPay.
+function EmployeeDialog({ canPay, employee, onClose, onSaved }: { canPay: boolean; employee?: Employee; onClose: () => void; onSaved: () => void }) {
   const t = useT();
   const isEdit = !!employee;
   const { register, handleSubmit } = useForm({
     defaultValues: employee
       ? {
-          employeeNo: employee.employeeNo,
           fullName: employee.fullName,
           position: employee.position ?? "",
-          baseSalary: employee.baseSalary,
-          housingAllowance: employee.housingAllowance,
-          transportAllowance: employee.transportAllowance,
+          baseSalary: employee.baseSalary ?? 0,
+          housingAllowance: employee.housingAllowance ?? 0,
+          transportAllowance: employee.transportAllowance ?? 0,
           cnpsNo: employee.cnpsNo ?? "",
           bankAccount: employee.bankAccount ?? "",
         }
@@ -143,16 +149,17 @@ function EmployeeDialog({ employee, onClose, onSaved }: { employee?: Employee; o
 
   const save = useMutation({
     mutationFn: async (data: any) => {
-      const payload = {
-        employeeNo: data.employeeNo,
+      const payload: Record<string, unknown> = {
         fullName: data.fullName,
         position: data.position,
-        baseSalary: Number(data.baseSalary) || 0,
-        housingAllowance: Number(data.housingAllowance) || 0,
-        transportAllowance: Number(data.transportAllowance) || 0,
         cnpsNo: data.cnpsNo,
-        bankAccount: data.bankAccount,
       };
+      if (canPay) {
+        payload.baseSalary = Number(data.baseSalary) || 0;
+        payload.housingAllowance = Number(data.housingAllowance) || 0;
+        payload.transportAllowance = Number(data.transportAllowance) || 0;
+        payload.bankAccount = data.bankAccount;
+      }
       const res = await fetch(isEdit ? `/api/employees/${employee!.id}` : "/api/employees", {
         method: isEdit ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json" },
@@ -162,8 +169,7 @@ function EmployeeDialog({ employee, onClose, onSaved }: { employee?: Employee; o
       if (!res.ok) throw new Error(b.error || "failed");
     },
     onSuccess: onSaved,
-    onError: (e: Error) =>
-      setError(e.message === "employee_no_exists" ? t("emp.noExists") : t("emp.saveError")),
+    onError: (e: Error) => setError(e.message === "employee_no_exists" ? t("emp.noExists") : t("emp.saveError")),
   });
 
   return (
@@ -171,10 +177,17 @@ function EmployeeDialog({ employee, onClose, onSaved }: { employee?: Employee; o
       <Card className="w-full max-w-lg p-6">
         <h2 className="mb-4 text-lg font-semibold">{isEdit ? t("emp.edit") : t("emp.new")}</h2>
         <form onSubmit={handleSubmit((d) => save.mutate(d))} className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="mb-1 block text-sm font-medium">{t("emp.no")}</label>
-            <Input {...register("employeeNo", { required: true })} />
-          </div>
+          {isEdit ? (
+            <div>
+              <label className="mb-1 block text-sm font-medium">{t("emp.no")}</label>
+              <Input value={employee!.employeeNo} readOnly tabIndex={-1} className="bg-slate-100 text-slate-500 dark:bg-slate-800" />
+            </div>
+          ) : (
+            <div>
+              <label className="mb-1 block text-sm font-medium">{t("emp.no")}</label>
+              <Input value={t("emp.autoNo")} readOnly tabIndex={-1} className="bg-slate-100 text-slate-400 dark:bg-slate-800" />
+            </div>
+          )}
           <div>
             <label className="mb-1 block text-sm font-medium">{t("emp.position")}</label>
             <Input {...register("position")} />
@@ -184,25 +197,29 @@ function EmployeeDialog({ employee, onClose, onSaved }: { employee?: Employee; o
             <Input {...register("fullName", { required: true })} />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium">{t("emp.base")}</label>
-            <Input type="number" {...register("baseSalary", { required: true })} />
-          </div>
-          <div>
             <label className="mb-1 block text-sm font-medium">{t("emp.cnps")}</label>
             <Input {...register("cnpsNo")} />
           </div>
-          <div>
-            <label className="mb-1 block text-sm font-medium">{t("emp.housing")}</label>
-            <Input type="number" {...register("housingAllowance")} />
-          </div>
-          <div>
-            <label className="mb-1 block text-sm font-medium">{t("emp.transport")}</label>
-            <Input type="number" {...register("transportAllowance")} />
-          </div>
-          <div className="col-span-2">
-            <label className="mb-1 block text-sm font-medium">{t("emp.bank")}</label>
-            <Input {...register("bankAccount")} />
-          </div>
+          {canPay && (
+            <>
+              <div>
+                <label className="mb-1 block text-sm font-medium">{t("emp.base")}</label>
+                <Input type="number" {...register("baseSalary")} />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium">{t("emp.housing")}</label>
+                <Input type="number" {...register("housingAllowance")} />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium">{t("emp.transport")}</label>
+                <Input type="number" {...register("transportAllowance")} />
+              </div>
+              <div className="col-span-2">
+                <label className="mb-1 block text-sm font-medium">{t("emp.bank")}</label>
+                <Input {...register("bankAccount")} />
+              </div>
+            </>
+          )}
           {error && <p className="col-span-2 text-sm text-red-600">{error}</p>}
           <div className="col-span-2 flex justify-end gap-2 pt-2">
             <Button type="button" variant="outline" onClick={onClose}>{t("common.cancel")}</Button>

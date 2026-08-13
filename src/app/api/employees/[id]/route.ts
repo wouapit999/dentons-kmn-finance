@@ -35,16 +35,21 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       if (clash) throw new AuthError(409, "employee_no_exists");
     }
 
+    const canSetPay = user.permissions.has("payroll:compensation");
     const data: Record<string, unknown> = {};
     if (input.employeeNo !== undefined) data.employeeNo = input.employeeNo;
     if (input.fullName !== undefined) data.fullName = input.fullName;
     if (input.position !== undefined) data.position = input.position || null;
-    if (input.baseSalary !== undefined) data.baseSalary = input.baseSalary;
-    if (input.housingAllowance !== undefined) data.housingAllowance = input.housingAllowance;
-    if (input.transportAllowance !== undefined) data.transportAllowance = input.transportAllowance;
     if (input.cnpsNo !== undefined) data.cnpsNo = input.cnpsNo || null;
-    if (input.bankAccount !== undefined) data.bankAccount = input.bankAccount || null;
     if (input.status !== undefined) data.status = input.status;
+    // Compensation & bank details are only writable by authorised roles;
+    // if an unauthorised caller sends them, they are ignored (not applied).
+    if (canSetPay) {
+      if (input.baseSalary !== undefined) data.baseSalary = input.baseSalary;
+      if (input.housingAllowance !== undefined) data.housingAllowance = input.housingAllowance;
+      if (input.transportAllowance !== undefined) data.transportAllowance = input.transportAllowance;
+      if (input.bankAccount !== undefined) data.bankAccount = input.bankAccount || null;
+    }
 
     const updated = await prisma.employee.update({ where: { id: emp.id }, data });
     await writeAudit({

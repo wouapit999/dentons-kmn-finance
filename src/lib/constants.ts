@@ -164,6 +164,7 @@ export const PERMISSIONS = {
   "payroll:read": "View payroll",
   "payroll:manage": "Manage employees and prepare payroll runs",
   "payroll:post": "Post/approve payroll runs",
+  "payroll:compensation": "View employee salary & compensation figures",
 
   // Fixed Assets
   "asset:read": "View fixed assets",
@@ -205,7 +206,7 @@ export const SYSTEM_ROLES: {
       "client:manage", "matter:read", "matter:manage", "time:read",
       "disbursement:read", "invoice:read", "invoice:approve", "payment:read",
       "payment:approve", "ap:read", "ap:approve", "trust:read", "trust:manage",
-      "payroll:read", "payroll:manage", "payroll:post", "asset:read",
+      "payroll:read", "payroll:manage", "payroll:post", "payroll:compensation", "asset:read",
       "budget:read", "budget:manage", "cash:read", "bank:read",
       "procure:read", "procure:approve", "task:admin", "security:admin",
       "report:read", "report:export",
@@ -221,7 +222,7 @@ export const SYSTEM_ROLES: {
       "disbursement:read", "invoice:read", "invoice:create",
       "invoice:approve", "payment:read", "payment:create", "payment:approve", "ap:read", "ap:manage",
       "ap:approve", "trust:read", "trust:manage", "payroll:read", "payroll:manage",
-      "payroll:post", "asset:read", "asset:manage", "asset:post",
+      "payroll:post", "payroll:compensation", "asset:read", "asset:manage", "asset:post",
       "budget:read", "budget:manage", "cash:read", "cash:manage",
       "bank:read", "bank:manage", "bank:reconcile", "procure:read",
       "procure:request", "procure:approve", "report:read", "report:export",
@@ -262,7 +263,7 @@ export const SYSTEM_ROLES: {
     key: "HR_PAYROLL_OFFICER",
     name: "HR Payroll Officer",
     hierarchyLevel: 40,
-    permissions: ["payroll:read", "payroll:manage", "payroll:post", "report:read"],
+    permissions: ["payroll:read", "payroll:manage", "payroll:post", "payroll:compensation", "report:read"],
   },
   {
     key: "PROCUREMENT_OFFICER",
@@ -309,8 +310,8 @@ export const SYSTEM_ROLES: {
     permissions: [
       "user:read", "user:manage", "user:reset_password", "role:read",
       "role:manage", "security:admin", "task:admin", "audit:read",
-      // HR employee administration (edit/delete employee records).
-      "payroll:read", "payroll:manage",
+      // HR employee administration (edit/delete employee records + salary).
+      "payroll:read", "payroll:manage", "payroll:compensation",
     ],
   },
   {

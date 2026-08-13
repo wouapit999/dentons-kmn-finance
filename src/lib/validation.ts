@@ -224,10 +224,11 @@ export type PayBillInput = z.infer<typeof payBillSchema>;
 // --- Payroll ---
 
 export const createEmployeeSchema = z.object({
-  employeeNo: z.string().min(1).max(30),
+  // employeeNo is assigned automatically by the server; accepted but ignored.
+  employeeNo: z.string().max(30).optional(),
   fullName: z.string().min(2).max(160),
   position: z.string().max(120).optional().or(z.literal("")),
-  baseSalary: z.number().nonnegative(),
+  baseSalary: z.number().nonnegative().default(0),
   housingAllowance: z.number().nonnegative().default(0),
   transportAllowance: z.number().nonnegative().default(0),
   cnpsNo: z.string().max(40).optional().or(z.literal("")),
