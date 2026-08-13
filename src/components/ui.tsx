@@ -21,18 +21,23 @@ export const Button = React.forwardRef<
   }
 >(({ className, variant = "primary", size = "md", ...props }, ref) => {
   const variants = {
-    primary: "bg-brand text-white hover:bg-brand-700",
-    ghost: "hover:bg-slate-100 dark:hover:bg-slate-800",
+    primary:
+      "btn-sheen bg-gradient-to-br from-brand-500 to-brand-800 text-white shadow-glow hover:-translate-y-0.5 hover:shadow-glowlg active:translate-y-0 active:shadow-glow",
+    ghost:
+      "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white",
     outline:
-      "border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800",
-    danger: "bg-red-600 text-white hover:bg-red-700",
+      "border border-slate-300 bg-white/70 backdrop-blur hover:-translate-y-0.5 hover:border-brand-300 hover:bg-brand-50/60 hover:text-brand-700 active:translate-y-0 dark:border-slate-700 dark:bg-slate-900/50 dark:hover:bg-slate-800 dark:hover:text-white",
+    danger:
+      "btn-sheen bg-gradient-to-br from-red-500 to-red-700 text-white shadow-md hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0",
   };
   const sizes = { sm: "h-8 px-3 text-sm", md: "h-10 px-4 text-sm" };
   return (
     <button
       ref={ref}
       className={cn(
-        "inline-flex items-center justify-center gap-2 rounded-md font-medium transition-colors disabled:opacity-50 disabled:pointer-events-none",
+        "inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-all duration-200 ease-out",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400/60 focus-visible:ring-offset-1 dark:focus-visible:ring-offset-slate-900",
+        "disabled:opacity-50 disabled:pointer-events-none disabled:translate-y-0 disabled:shadow-none",
         variants[variant],
         sizes[size],
         className,
@@ -62,7 +67,7 @@ export function Card({ className, ...props }: React.HTMLAttributes<HTMLDivElemen
   return (
     <div
       className={cn(
-        "rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900",
+        "rounded-2xl border border-slate-200/80 bg-white/90 shadow-card backdrop-blur-sm transition-shadow dark:border-slate-800/80 dark:bg-slate-900/80",
         className,
       )}
       {...props}

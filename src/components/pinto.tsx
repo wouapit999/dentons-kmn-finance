@@ -103,7 +103,7 @@ export function Pinto() {
       {!open && (
         <button
           onClick={() => setOpen(true)}
-          className="fixed bottom-5 right-5 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-brand text-white shadow-lg transition hover:bg-brand-700"
+          className="btn-sheen fixed bottom-5 right-5 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-brand-500 to-brand-800 text-white shadow-glow transition-all duration-200 hover:-translate-y-0.5 hover:scale-105 hover:shadow-glowlg active:translate-y-0"
           aria-label="Pinto"
         >
           <Bot size={26} />

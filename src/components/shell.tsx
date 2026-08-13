@@ -47,6 +47,7 @@ import { cn, Button } from "@/components/ui";
 import { NotificationsBell } from "@/components/notifications-bell";
 import { Pinto } from "@/components/pinto";
 import { Logo } from "@/components/logo";
+import { CameroonFlag } from "@/components/flag";
 import type { MessageKey } from "@/lib/i18n";
 import type { Locale } from "@/lib/constants";
 
@@ -115,10 +116,15 @@ export function Shell({ children, user }: ShellProps) {
 
   return (
     <div className="flex min-h-screen">
-      <aside className="flex w-60 flex-col border-r border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
-        <div className="px-5 py-4">
-          <Logo className="h-7 w-auto" />
-          <div className="mt-1.5 text-[11px] font-normal text-slate-500">ERP by Bouquet Innovation SA</div>
+      <aside className="glass flex w-60 flex-col border-r border-slate-200/70 dark:border-slate-800/70">
+        <div className="relative overflow-hidden px-5 py-4">
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-brand-500/10 via-transparent to-cmr-green/10" />
+          <div className="relative">
+            <Logo className="h-7 w-auto" />
+            <div className="mt-1.5 flex items-center gap-1.5 text-[11px] font-normal text-slate-500">
+              ERP by Bouquet Innovation SA
+            </div>
+          </div>
         </div>
         <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-2">
           {nav
@@ -128,9 +134,9 @@ export function Shell({ children, user }: ShellProps) {
                 key={n.href}
                 href={n.href}
                 className={cn(
-                  "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                  "nav-item flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium",
                   path === n.href
-                    ? "bg-brand-50 text-brand-700 dark:bg-brand-900/40 dark:text-brand-100"
+                    ? "nav-active bg-brand-50 text-brand-700 shadow-sm dark:bg-brand-900/40 dark:text-brand-100"
                     : "text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800",
                 )}
               >
@@ -151,7 +157,11 @@ export function Shell({ children, user }: ShellProps) {
       </aside>
 
       <div className="flex flex-1 flex-col">
-        <header className="flex h-14 items-center justify-end gap-3 border-b border-slate-200 bg-white px-6 dark:border-slate-800 dark:bg-slate-900">
+        <header className="glass sticky top-0 z-30 flex h-14 items-center justify-end gap-3 border-b border-slate-200/70 px-6 dark:border-slate-800/70">
+          <span className="mr-auto flex items-center gap-2 text-xs font-medium text-slate-400">
+            <CameroonFlag className="h-4 w-6 rounded-sm shadow-sm ring-1 ring-black/5" />
+            <span className="hidden sm:inline">Cameroun</span>
+          </span>
           <NotificationsBell />
           <div className="flex items-center gap-1 text-xs">
             <button
