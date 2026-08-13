@@ -22,6 +22,7 @@ interface Employee {
   housingAllowance: number;
   transportAllowance: number;
   cnpsNo: string | null;
+  bankAccount: string | null;
 }
 
 export default function EmployeesPage() {
@@ -29,10 +30,26 @@ export default function EmployeesPage() {
   const { can } = usePerms();
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState<Employee | null>(null);
+  const [rowError, setRowError] = useState<string | null>(null);
+  const canManage = can("payroll:manage");
 
   const employees = useQuery({
     queryKey: ["employees"],
     queryFn: () => getJson<Employee[]>("/api/employees"),
+  });
+
+  const refresh = () => qc.invalidateQueries({ queryKey: ["employees"] });
+
+  const remove = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await fetch(`/api/employees/${id}`, { method: "DELETE" });
+      const b = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(b.error || "failed");
+      return b as { archived?: boolean };
+    },
+    onSuccess: (b) => { setRowError(b.archived ? t("emp.archivedMsg") : null); refresh(); },
+    onError: (e: Error) => setRowError(e.message),
   });
 
   return (
@@ -42,8 +59,10 @@ export default function EmployeesPage() {
           <h1 className="text-2xl font-semibold">{t("emp.title")}</h1>
           <p className="text-sm text-slate-500">{t("emp.subtitle")}</p>
         </div>
-        {can("payroll:manage") && <Button onClick={() => setOpen(true)}>+ {t("emp.new")}</Button>}
+        {canManage && <Button onClick={() => setOpen(true)}>+ {t("emp.new")}</Button>}
       </div>
+
+      {rowError && <p className="text-sm text-amber-600">{rowError}</p>}
 
       <Card className="overflow-x-auto">
         <table className="w-full text-sm">
@@ -54,14 +73,15 @@ export default function EmployeesPage() {
               <th className="px-4 py-3">{t("emp.position")}</th>
               <th className="px-4 py-3 text-right">{t("emp.base")}</th>
               <th className="px-4 py-3">{t("emp.cnps")}</th>
+              {canManage && <th className="px-4 py-3 text-right">{t("common.actions")}</th>}
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
             {employees.isLoading && (
-              <tr><td colSpan={5} className="px-4 py-6 text-center text-slate-400">{t("common.loading")}</td></tr>
+              <tr><td colSpan={canManage ? 6 : 5} className="px-4 py-6 text-center text-slate-400">{t("common.loading")}</td></tr>
             )}
             {employees.data?.length === 0 && (
-              <tr><td colSpan={5} className="px-4 py-6 text-center text-slate-400">—</td></tr>
+              <tr><td colSpan={canManage ? 6 : 5} className="px-4 py-6 text-center text-slate-400">—</td></tr>
             )}
             {employees.data?.map((e) => (
               <tr key={e.id}>
@@ -70,6 +90,21 @@ export default function EmployeesPage() {
                 <td className="px-4 py-2.5 text-slate-500">{e.position ?? "—"}</td>
                 <td className="px-4 py-2.5 text-right">{formatMoney(e.baseSalary)}</td>
                 <td className="px-4 py-2.5 text-slate-500">{e.cnpsNo ?? "—"}</td>
+                {canManage && (
+                  <td className="px-4 py-2.5">
+                    <div className="flex justify-end gap-2">
+                      <Button size="sm" variant="outline" onClick={() => setEditing(e)}>{t("common.edit")}</Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={remove.isPending}
+                        onClick={() => { if (confirm(t("emp.confirmDelete"))) remove.mutate(e.id); }}
+                      >
+                        {t("common.delete")}
+                      </Button>
+                    </div>
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>
@@ -77,43 +112,65 @@ export default function EmployeesPage() {
       </Card>
 
       {open && (
-        <NewEmployeeDialog onClose={() => setOpen(false)} onCreated={() => { setOpen(false); qc.invalidateQueries({ queryKey: ["employees"] }); }} />
+        <EmployeeDialog onClose={() => setOpen(false)} onSaved={() => { setOpen(false); refresh(); }} />
+      )}
+      {editing && (
+        <EmployeeDialog employee={editing} onClose={() => setEditing(null)} onSaved={() => { setEditing(null); refresh(); }} />
       )}
     </div>
   );
 }
 
-function NewEmployeeDialog({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
+// Shared create/edit dialog.
+function EmployeeDialog({ employee, onClose, onSaved }: { employee?: Employee; onClose: () => void; onSaved: () => void }) {
   const t = useT();
-  const { register, handleSubmit } = useForm();
+  const isEdit = !!employee;
+  const { register, handleSubmit } = useForm({
+    defaultValues: employee
+      ? {
+          employeeNo: employee.employeeNo,
+          fullName: employee.fullName,
+          position: employee.position ?? "",
+          baseSalary: employee.baseSalary,
+          housingAllowance: employee.housingAllowance,
+          transportAllowance: employee.transportAllowance,
+          cnpsNo: employee.cnpsNo ?? "",
+          bankAccount: employee.bankAccount ?? "",
+        }
+      : {},
+  });
   const [error, setError] = useState<string | null>(null);
 
-  const create = useMutation({
+  const save = useMutation({
     mutationFn: async (data: any) => {
-      const res = await fetch("/api/employees", {
-        method: "POST",
+      const payload = {
+        employeeNo: data.employeeNo,
+        fullName: data.fullName,
+        position: data.position,
+        baseSalary: Number(data.baseSalary) || 0,
+        housingAllowance: Number(data.housingAllowance) || 0,
+        transportAllowance: Number(data.transportAllowance) || 0,
+        cnpsNo: data.cnpsNo,
+        bankAccount: data.bankAccount,
+      };
+      const res = await fetch(isEdit ? `/api/employees/${employee!.id}` : "/api/employees", {
+        method: isEdit ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          employeeNo: data.employeeNo,
-          fullName: data.fullName,
-          position: data.position,
-          baseSalary: Number(data.baseSalary) || 0,
-          housingAllowance: Number(data.housingAllowance) || 0,
-          transportAllowance: Number(data.transportAllowance) || 0,
-          cnpsNo: data.cnpsNo,
-        }),
+        body: JSON.stringify(payload),
       });
-      if (!res.ok) throw new Error();
+      const b = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(b.error || "failed");
     },
-    onSuccess: onCreated,
-    onError: () => setError("Could not create employee (check employee no. is unique)."),
+    onSuccess: onSaved,
+    onError: (e: Error) =>
+      setError(e.message === "employee_no_exists" ? t("emp.noExists") : t("emp.saveError")),
   });
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
       <Card className="w-full max-w-lg p-6">
-        <h2 className="mb-4 text-lg font-semibold">{t("emp.new")}</h2>
-        <form onSubmit={handleSubmit((d) => create.mutate(d))} className="grid grid-cols-2 gap-3">
+        <h2 className="mb-4 text-lg font-semibold">{isEdit ? t("emp.edit") : t("emp.new")}</h2>
+        <form onSubmit={handleSubmit((d) => save.mutate(d))} className="grid grid-cols-2 gap-3">
           <div>
             <label className="mb-1 block text-sm font-medium">{t("emp.no")}</label>
             <Input {...register("employeeNo", { required: true })} />
@@ -142,10 +199,14 @@ function NewEmployeeDialog({ onClose, onCreated }: { onClose: () => void; onCrea
             <label className="mb-1 block text-sm font-medium">{t("emp.transport")}</label>
             <Input type="number" {...register("transportAllowance")} />
           </div>
+          <div className="col-span-2">
+            <label className="mb-1 block text-sm font-medium">{t("emp.bank")}</label>
+            <Input {...register("bankAccount")} />
+          </div>
           {error && <p className="col-span-2 text-sm text-red-600">{error}</p>}
           <div className="col-span-2 flex justify-end gap-2 pt-2">
             <Button type="button" variant="outline" onClick={onClose}>{t("common.cancel")}</Button>
-            <Button type="submit" disabled={create.isPending}>{t("common.create")}</Button>
+            <Button type="submit" disabled={save.isPending}>{isEdit ? t("common.save") : t("common.create")}</Button>
           </div>
         </form>
       </Card>

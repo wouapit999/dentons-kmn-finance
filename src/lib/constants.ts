@@ -309,6 +309,8 @@ export const SYSTEM_ROLES: {
     permissions: [
       "user:read", "user:manage", "user:reset_password", "role:read",
       "role:manage", "security:admin", "task:admin", "audit:read",
+      // HR employee administration (edit/delete employee records).
+      "payroll:read", "payroll:manage",
     ],
   },
   {

@@ -235,6 +235,20 @@ export const createEmployeeSchema = z.object({
 });
 export type CreateEmployeeInput = z.infer<typeof createEmployeeSchema>;
 
+// Update: every field optional so callers can change any subset.
+export const updateEmployeeSchema = z.object({
+  employeeNo: z.string().min(1).max(30).optional(),
+  fullName: z.string().min(2).max(160).optional(),
+  position: z.string().max(120).optional().or(z.literal("")),
+  baseSalary: z.number().nonnegative().optional(),
+  housingAllowance: z.number().nonnegative().optional(),
+  transportAllowance: z.number().nonnegative().optional(),
+  cnpsNo: z.string().max(40).optional().or(z.literal("")),
+  bankAccount: z.string().max(40).optional().or(z.literal("")),
+  status: z.enum(["ACTIVE", "INACTIVE"]).optional(),
+});
+export type UpdateEmployeeInput = z.infer<typeof updateEmployeeSchema>;
+
 export const createPayrollRunSchema = z.object({
   period: z.string().min(3).max(40),
   periodId: z.string().uuid().optional().or(z.literal("")),

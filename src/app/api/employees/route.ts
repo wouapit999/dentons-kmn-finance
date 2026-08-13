@@ -30,6 +30,7 @@ export async function GET() {
       housingAllowance: Number(e.housingAllowance),
       transportAllowance: Number(e.transportAllowance),
       cnpsNo: e.cnpsNo,
+      bankAccount: e.bankAccount,
     }));
   });
 }
