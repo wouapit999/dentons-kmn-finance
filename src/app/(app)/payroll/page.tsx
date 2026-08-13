@@ -78,7 +78,7 @@ export default function PayrollPage() {
             <label className="mb-1 block text-xs font-medium">{t("pr.period")}</label>
             <Input placeholder="July 2026" value={period} onChange={(e) => setPeriod(e.target.value)} />
           </div>
-          {can("payroll:manage") && <Button disabled={period.length < 3 || createRun.isPending} onClick={() => createRun.mutate()}>{t("pr.new")}</Button>}
+          {can("payroll:manage") && <Button disabled={period.length < 3 || createRun.isPending} onClick={() => createRun.mutate()}>{t("pr.generate")}</Button>}
         </div>
         {error && <p className="mt-2 text-sm text-red-600">{error === "no_active_employees" ? "Add employees first." : error}</p>}
       </Card>
@@ -130,11 +130,42 @@ export default function PayrollPage() {
 
 function RunDetailDialog({ id, onClose }: { id: string; onClose: () => void }) {
   const t = useT();
+  const { can } = usePerms();
+  const canPay = can("payroll:compensation");
+  const [lang, setLang] = useState<"en" | "fr">("en");
+  const [busy, setBusy] = useState<null | "pdf" | "docx">(null);
+  const [dlError, setDlError] = useState<string | null>(null);
   const detail = useQuery({
     queryKey: ["payroll", id],
     queryFn: () => getJson<RunDetail>(`/api/payroll/${id}`),
   });
   const d = detail.data;
+
+  async function downloadPayslips(format: "pdf" | "docx") {
+    if (busy) return;
+    setBusy(format);
+    setDlError(null);
+    try {
+      const res = await fetch(`/api/payroll/${id}/payslips?format=${format}&lang=${lang}`);
+      if (!res.ok) {
+        const b = await res.json().catch(() => ({}));
+        throw new Error(b.error || "failed");
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `Payslips-${(d?.period ?? "run").replace(/[^a-zA-Z0-9]+/g, "-")}-${lang.toUpperCase()}.${format}`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      setDlError((e as Error).message || "failed");
+    } finally {
+      setBusy(null);
+    }
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
@@ -143,6 +174,32 @@ function RunDetailDialog({ id, onClose }: { id: string; onClose: () => void }) {
           <h2 className="text-lg font-semibold">{t("pr.title")} · {d?.period ?? ""}</h2>
           <Button size="sm" variant="ghost" onClick={onClose}>✕</Button>
         </div>
+
+        {canPay ? (
+          <div className="mb-4 flex flex-wrap items-end gap-3 rounded-md bg-slate-50 p-3 dark:bg-slate-800/50">
+            <div>
+              <label className="mb-1 block text-xs font-medium">{t("pr.language")}</label>
+              <select
+                className="h-9 rounded-md border border-slate-300 bg-white px-2 text-sm dark:border-slate-700 dark:bg-slate-900"
+                value={lang}
+                onChange={(e) => setLang(e.target.value as "en" | "fr")}
+              >
+                <option value="en">English</option>
+                <option value="fr">Français</option>
+              </select>
+            </div>
+            <Button size="sm" variant="outline" disabled={!!busy} onClick={() => downloadPayslips("pdf")}>
+              {busy === "pdf" ? "…" : t("pr.downloadPdf")}
+            </Button>
+            <Button size="sm" variant="outline" disabled={!!busy} onClick={() => downloadPayslips("docx")}>
+              {busy === "docx" ? "…" : t("pr.downloadDocx")}
+            </Button>
+            <span className="text-xs text-slate-400">{t("pr.payslipsHint")}</span>
+            {dlError && <span className="text-xs text-red-600">{dlError}</span>}
+          </div>
+        ) : (
+          <p className="mb-4 text-xs text-amber-600">{t("pr.payslipsRestricted")}</p>
+        )}
         {!d ? (
           <p className="text-slate-400">{t("common.loading")}</p>
         ) : (
