@@ -82,6 +82,89 @@ body {
   animation: aurora 18s ease infinite;
 }
 
+/* ---------------------------------------------------------------------------
+   Spatial arena + rotating globe splash (login / start page)
+   Pure CSS (transforms/opacity), no external assets.
+---------------------------------------------------------------------------- */
+.arena {
+  background:
+    radial-gradient(120% 80% at 50% 30%, #241245 0%, #120a24 45%, #060410 100%);
+}
+/* Starfield: two layers of dots that gently drift and twinkle. */
+.stars, .stars2 {
+  position: absolute; inset: -20%;
+  background-repeat: repeat;
+  background-image:
+    radial-gradient(1.4px 1.4px at 12% 18%, #fff, transparent),
+    radial-gradient(1.2px 1.2px at 27% 62%, #e8d8ff, transparent),
+    radial-gradient(1.6px 1.6px at 44% 32%, #fff, transparent),
+    radial-gradient(1.1px 1.1px at 61% 78%, #d9ffef, transparent),
+    radial-gradient(1.5px 1.5px at 73% 22%, #fff, transparent),
+    radial-gradient(1.2px 1.2px at 85% 54%, #ecdcff, transparent),
+    radial-gradient(1.3px 1.3px at 9% 84%, #fff, transparent),
+    radial-gradient(1.1px 1.1px at 52% 91%, #fff, transparent),
+    radial-gradient(1.5px 1.5px at 92% 88%, #fff, transparent),
+    radial-gradient(1.2px 1.2px at 35% 8%, #fff, transparent);
+  background-size: 100% 100%;
+  animation: twinkle 5.5s ease-in-out infinite alternate;
+}
+.stars2 { opacity: .5; animation: drift 60s linear infinite, twinkle 7s ease-in-out infinite alternate; }
+@keyframes twinkle { from { opacity: .35 } to { opacity: .9 } }
+@keyframes drift { from { transform: translateY(0) } to { transform: translateY(30px) } }
+
+.globe-wrap { animation: splashIn 1.3s cubic-bezier(0.2, 0.75, 0.2, 1) both; }
+@keyframes splashIn {
+  0% { opacity: 0; transform: scale(0.78) translateY(14px); filter: blur(6px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); filter: blur(0); }
+}
+
+/* The planet: a shaded sphere with a spinning surface grid + specular. */
+.globe {
+  position: relative;
+  border-radius: 9999px;
+  overflow: hidden;
+  background: radial-gradient(circle at 32% 26%, #9d55c4 0%, #5b2a86 38%, #2a1147 66%, #0e0820 100%);
+  box-shadow:
+    inset -20px -26px 70px rgba(0, 0, 0, 0.8),
+    inset 14px 16px 46px rgba(157, 85, 196, 0.35),
+    0 0 90px rgba(125, 51, 168, 0.55);
+}
+.globe::before {
+  content: "";
+  position: absolute; inset: 0; border-radius: inherit;
+  background-image:
+    repeating-linear-gradient(90deg, rgba(0, 122, 94, 0) 0 22px, rgba(0, 200, 150, 0.30) 22px 24px),
+    repeating-linear-gradient(0deg, rgba(214, 179, 232, 0) 0 20px, rgba(214, 179, 232, 0.22) 20px 22px),
+    radial-gradient(closest-side at 30% 40%, rgba(0, 200, 150, 0.25), transparent 70%),
+    radial-gradient(closest-side at 68% 62%, rgba(0, 200, 150, 0.18), transparent 70%);
+  background-size: 200% 100%, 100% 100%, 45% 45%, 40% 40%;
+  background-repeat: repeat, repeat, no-repeat, no-repeat;
+  mix-blend-mode: screen;
+  opacity: 0.6;
+  animation: globe-spin 16s linear infinite;
+}
+.globe::after {
+  content: "";
+  position: absolute; inset: 0; border-radius: inherit;
+  background: radial-gradient(circle at 30% 24%, rgba(255, 255, 255, 0.4), transparent 42%);
+}
+@keyframes globe-spin { from { background-position: 0 0, 0 0, 0 0, 0 0; } to { background-position: 200% 0, 0 0, 0 0, 0 0; } }
+
+/* Orbit ring + satellite that circles the globe (Cameroon gold). */
+.orbit { position: absolute; inset: -14% -6%; transform-style: preserve-3d; transform: rotateX(74deg); }
+.orbit-ring {
+  position: absolute; inset: 0; border-radius: 9999px;
+  border: 1px solid rgba(157, 85, 196, 0.4);
+  box-shadow: 0 0 20px rgba(125, 51, 168, 0.25) inset;
+}
+.orbit-run { position: absolute; inset: 0; animation: spin360 12s linear infinite; }
+.sat {
+  position: absolute; top: -6px; left: 50%; margin-left: -6px;
+  width: 12px; height: 12px; border-radius: 9999px;
+  background: #fcd116; box-shadow: 0 0 14px 3px rgba(252, 209, 22, 0.85);
+}
+@keyframes spin360 { from { transform: rotate(0deg) } to { transform: rotate(360deg) } }
+
 /* Slim, modern scrollbars. */
 * { scrollbar-width: thin; scrollbar-color: rgba(125,51,168,0.35) transparent; }
 *::-webkit-scrollbar { width: 8px; height: 8px; }

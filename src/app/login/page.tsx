@@ -11,6 +11,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Button, Input, Card } from "@/components/ui";
 import { Logo } from "@/components/logo";
 import { CameroonFlag } from "@/components/flag";
+import { GlobeSplash } from "@/components/globe-splash";
 import { useT } from "@/lib/useT";
 import { useUi } from "@/lib/store";
 import type { LoginInput } from "@/lib/validation";
@@ -66,11 +67,8 @@ function LoginForm() {
 
   return (
     <div className="relative flex min-h-screen items-center justify-center overflow-hidden p-4">
-      <div className="aurora absolute inset-0" />
-      <div className="absolute inset-0 bg-white/30 backdrop-blur-[2px] dark:bg-black/30" />
-      <div className="pointer-events-none absolute -left-24 top-1/4 h-72 w-72 animate-floaty rounded-full bg-cmr-green/20 blur-3xl" />
-      <div className="pointer-events-none absolute -right-16 bottom-1/4 h-72 w-72 animate-floaty rounded-full bg-cmr-yellow/20 blur-3xl" style={{ animationDelay: "2s" }} />
-      <Card className="relative z-10 w-full max-w-md animate-fadeUp border-white/50 bg-white/85 p-8 shadow-glowlg dark:border-white/10 dark:bg-slate-900/80">
+      <GlobeSplash />
+      <Card className="relative z-10 w-full max-w-md animate-fadeUp border-white/40 bg-white/90 p-8 shadow-glowlg backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/85">
         <div className="mb-6 text-center">
           <Logo className="mx-auto mb-3 h-9 w-auto" />
           <h1 className="text-xl font-semibold">{t("login.title")}</h1>
