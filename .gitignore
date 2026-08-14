@@ -43,3 +43,5 @@ Thumbs.db
 
 # knowledge graph output (generated)
 /graphify-out/
+
+.env.prod

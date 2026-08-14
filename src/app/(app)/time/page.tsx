@@ -12,6 +12,9 @@ import { Button, Input, Card, Badge } from "@/components/ui";
 import { useT } from "@/lib/useT";
 import { usePerms, getJson } from "@/lib/usePerms";
 import { formatMoney } from "@/lib/money";
+import { TimerPanel } from "./timer-panel";
+import { WeekGrid } from "./week-grid";
+import { DiaryPanel } from "./diary-panel";
 
 interface TimeEntry {
   id: string;
@@ -52,6 +55,8 @@ export default function TimePage() {
 
   const { register, handleSubmit, reset } = useForm();
   const [error, setError] = useState<string | null>(null);
+  const [tab, setTab] = useState<"diary" | "timers" | "week" | "entries">("diary");
+  const canLog = can("time:log");
 
   const log = useMutation({
     mutationFn: async (form: any) => {
@@ -83,11 +88,45 @@ export default function TimePage() {
     onError: (e: Error) => setError(e.message),
   });
 
+  const tabs = [
+    { k: "diary" as const, label: t("time.tab.diary") },
+    { k: "timers" as const, label: t("time.tab.timers") },
+    { k: "week" as const, label: t("time.tab.week") },
+    { k: "entries" as const, label: t("time.tab.entries") },
+  ];
+
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-semibold">{t("time.title")}</h1>
-      <p className="-mt-4 text-sm text-slate-500">{t("time.subtitle")}</p>
+      <div>
+        <h1 className="text-2xl font-semibold">{t("time.title")}</h1>
+        <p className="text-sm text-slate-500">{t("time.subtitle")}</p>
+      </div>
 
+      {/* Module tabs */}
+      <div className="flex flex-wrap gap-1 rounded-xl border border-slate-200/70 bg-white/60 p-1 backdrop-blur dark:border-slate-800/70 dark:bg-slate-900/50">
+        {tabs.map((x) => (
+          <button
+            key={x.k}
+            onClick={() => setTab(x.k)}
+            className={
+              "rounded-lg px-3 py-1.5 text-sm font-medium transition-all " +
+              (tab === x.k
+                ? "bg-gradient-to-br from-brand-500 to-brand-800 text-white shadow-glow"
+                : "text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800")
+            }
+          >
+            {x.label}
+          </button>
+        ))}
+      </div>
+
+      {tab === "diary" && <DiaryPanel />}
+      {tab === "timers" && canLog && <TimerPanel matters={matters.data ?? []} />}
+      {tab === "timers" && !canLog && <p className="text-sm text-slate-400">{t("timer.noPermission")}</p>}
+      {tab === "week" && <WeekGrid matters={matters.data ?? []} canLog={canLog} />}
+
+      {tab === "entries" && (
+      <div className="space-y-6">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <Card className="p-5">
           <div className="text-3xl font-semibold">{data.data?.summary.billableHours ?? 0}</div>
@@ -183,6 +222,8 @@ export default function TimePage() {
           </tbody>
         </table>
       </Card>
+      </div>
+      )}
     </div>
   );
 }

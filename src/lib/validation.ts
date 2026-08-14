@@ -471,3 +471,116 @@ export const clientDocumentSchema = z.object({
   notes: z.string().max(500).optional().or(z.literal("")),
 });
 export type ClientDocumentInput = z.infer<typeof clientDocumentSchema>;
+
+// --- Module 17: Time Management & Tracking ---
+
+export const startTimerSchema = z.object({
+  matterId: z.string().uuid().optional().or(z.literal("")),
+  narrative: z.string().max(500).optional().or(z.literal("")),
+  source: z.enum(["APP", "OUTLOOK", "MOBILE"]).default("APP"),
+});
+export type StartTimerInput = z.infer<typeof startTimerSchema>;
+
+export const timerActionSchema = z.object({
+  action: z.enum(["pause", "resume", "discard", "log"]),
+  // Supplied when logging the timer as a time entry.
+  matterId: z.string().uuid().optional().or(z.literal("")),
+  narrative: z.string().max(500).optional().or(z.literal("")),
+  billable: z.boolean().optional(),
+  rate: z.number().nonnegative().optional(),
+  minutes: z.number().int().positive().max(24 * 60).optional(), // override rounding
+});
+export type TimerActionInput = z.infer<typeof timerActionSchema>;
+
+// Quick capture: a short duration logged directly (e.g. answering an email).
+// Also the payload an Outlook/mobile add-in would post.
+export const quickTimeSchema = z.object({
+  matterId: z.string().uuid(),
+  minutes: z.number().int().positive().max(24 * 60),
+  date: z.string().optional(),
+  narrative: z.string().max(500).optional().or(z.literal("")),
+  billable: z.boolean().default(true),
+  rate: z.number().nonnegative().optional(),
+  source: z.enum(["APP", "TIMER", "OUTLOOK", "MOBILE"]).default("APP"),
+});
+export type QuickTimeInput = z.infer<typeof quickTimeSchema>;
+
+// Weekly grid: save many cells at once.
+export const weekGridSchema = z.object({
+  entries: z
+    .array(
+      z.object({
+        id: z.string().uuid().optional(), // update when present
+        matterId: z.string().uuid(),
+        date: z.string(),
+        minutes: z.number().int().min(0).max(24 * 60),
+        billable: z.boolean().default(true),
+        narrative: z.string().max(500).optional().or(z.literal("")),
+        rate: z.number().nonnegative().optional(),
+      }),
+    )
+    .max(200),
+});
+export type WeekGridInput = z.infer<typeof weekGridSchema>;
+
+// --- Module 18: Financial & Practice Management ---
+
+export const createProformaSchema = z.object({
+  matterId: z.string().uuid(),
+  periodFrom: z.string().optional().or(z.literal("")),
+  periodTo: z.string().optional().or(z.literal("")),
+  currency: z.string().length(3).default("XAF"),
+  vatRate: z.number().min(0).max(100).default(19.25),
+  whtRate: z.number().min(0).max(100).default(0),
+  notes: z.string().max(2000).optional().or(z.literal("")),
+});
+export type CreateProformaInput = z.infer<typeof createProformaSchema>;
+
+export const updateProformaSchema = z.object({
+  vatRate: z.number().min(0).max(100).optional(),
+  whtRate: z.number().min(0).max(100).optional(),
+  notes: z.string().max(2000).optional().or(z.literal("")),
+  reviewerId: z.string().uuid().optional().or(z.literal("")),
+  currency: z.string().length(3).optional(),
+  lines: z
+    .array(
+      z.object({
+        id: z.string().uuid(),
+        description: z.string().min(1).max(500).optional(),
+        adjustedAmount: z.number().nonnegative().optional(),
+        included: z.boolean().optional(),
+      }),
+    )
+    .max(500)
+    .optional(),
+  addLines: z
+    .array(z.object({ description: z.string().min(1).max(500), amount: z.number() }))
+    .max(50)
+    .optional(),
+});
+export type UpdateProformaInput = z.infer<typeof updateProformaSchema>;
+
+export const proformaTransitionSchema = z.object({
+  action: z.enum(["submit", "approve", "reject", "reopen"]),
+  comment: z.string().max(2000).optional().or(z.literal("")),
+});
+export type ProformaTransitionInput = z.infer<typeof proformaTransitionSchema>;
+
+export const proformaCommentSchema = z.object({ body: z.string().min(1).max(2000) });
+
+export const legalEntitySchema = z.object({
+  code: z.string().min(1).max(20),
+  name: z.string().min(2).max(160),
+  baseCurrency: z.string().length(3).default("XAF"),
+  countryCode: z.string().length(2).default("CM"),
+  taxId: z.string().max(40).optional().or(z.literal("")),
+  isDefault: z.boolean().default(false),
+});
+export type LegalEntityInput = z.infer<typeof legalEntitySchema>;
+
+export const exchangeRateSchema = z.object({
+  currency: z.string().length(3),
+  rate: z.number().positive(),
+  asOf: z.string(),
+});
+export type ExchangeRateInput = z.infer<typeof exchangeRateSchema>;

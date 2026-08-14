@@ -181,6 +181,15 @@ export const PERMISSIONS = {
   // Reporting
   "report:read": "View reports",
   "report:export": "Export reports",
+
+  // Proforma / pre-bill workflow (Financial & Practice Management)
+  "proforma:read": "View proformas (pre-bills)",
+  "proforma:manage": "Create and edit proformas, adjust and write down lines",
+  "proforma:approve": "Approve or reject proformas and convert them to invoices",
+
+  // Practice analytics & global configuration
+  "analytics:read": "View practice and financial analytics dashboards",
+  "entity:manage": "Manage legal entities, offices and exchange rates",
 } as const;
 
 export type PermissionKey = keyof typeof PERMISSIONS;
@@ -210,6 +219,7 @@ export const SYSTEM_ROLES: {
       "budget:read", "budget:manage", "cash:read", "bank:read",
       "procure:read", "procure:approve", "task:admin", "security:admin",
       "report:read", "report:export",
+      "proforma:read", "proforma:approve", "analytics:read",
     ],
   },
   {
@@ -223,6 +233,7 @@ export const SYSTEM_ROLES: {
       "invoice:approve", "payment:read", "payment:create", "payment:approve", "ap:read", "ap:manage",
       "ap:approve", "trust:read", "trust:manage", "payroll:read", "payroll:manage",
       "payroll:post", "payroll:compensation", "asset:read", "asset:manage", "asset:post",
+      "proforma:read", "proforma:manage", "proforma:approve", "analytics:read", "entity:manage",
       "budget:read", "budget:manage", "cash:read", "cash:manage",
       "bank:read", "bank:manage", "bank:reconcile", "procure:read",
       "procure:request", "procure:approve", "report:read", "report:export",
@@ -238,6 +249,7 @@ export const SYSTEM_ROLES: {
       "invoice:approve", "payment:read", "payment:create", "payment:approve",
       "ap:read", "ap:manage", "ap:approve", "trust:read", "asset:read",
       "asset:manage", "asset:post", "budget:read", "budget:manage",
+      "proforma:read", "proforma:manage", "proforma:approve", "analytics:read",
       "cash:read", "cash:manage", "bank:read", "bank:manage", "bank:reconcile",
       "procure:read", "procure:request", "procure:approve", "report:read", "report:export",
     ],
@@ -251,6 +263,7 @@ export const SYSTEM_ROLES: {
       "invoice:read", "invoice:create", "payment:read", "payment:create",
       "ap:read", "ap:manage", "asset:read", "asset:manage", "cash:read",
       "cash:manage", "bank:read", "procure:read", "procure:request", "report:read",
+      "proforma:read", "proforma:manage",
     ],
   },
   {
@@ -282,6 +295,7 @@ export const SYSTEM_ROLES: {
       "client:read", "client:manage", "matter:read", "matter:manage",
       "time:read", "time:log", "disbursement:read", "disbursement:log",
       "invoice:read", "invoice:approve", "report:read", "trust:read",
+      "proforma:read", "proforma:manage", "analytics:read",
     ],
   },
   {
@@ -291,6 +305,7 @@ export const SYSTEM_ROLES: {
     permissions: [
       "client:read", "matter:read", "matter:manage", "time:read", "time:log",
       "disbursement:read", "disbursement:log", "invoice:read", "report:read",
+      "proforma:read",
     ],
   },
   {
@@ -301,6 +316,7 @@ export const SYSTEM_ROLES: {
       "client:read", "client:manage", "matter:read", "matter:manage",
       "time:read", "time:log", "disbursement:read", "disbursement:log",
       "invoice:read", "invoice:approve", "report:read",
+      "proforma:read", "proforma:manage", "analytics:read",
     ],
   },
   {
@@ -322,7 +338,7 @@ export const SYSTEM_ROLES: {
       "gl:read", "client:read", "matter:read", "time:read", "disbursement:read",
       "invoice:read", "payment:read", "ap:read", "trust:read", "payroll:read",
       "asset:read", "budget:read", "cash:read", "bank:read", "procure:read",
-      "audit:read", "report:read", "report:export",
+      "audit:read", "report:read", "report:export", "proforma:read", "analytics:read",
     ],
   },
   {
@@ -333,7 +349,7 @@ export const SYSTEM_ROLES: {
       "gl:read", "client:read", "matter:read", "time:read", "disbursement:read",
       "invoice:read", "payment:read", "ap:read", "asset:read", "budget:read",
       "cash:read", "bank:read", "procure:read",
-      "report:read",
+      "report:read", "proforma:read", "analytics:read",
     ],
   },
 ];
