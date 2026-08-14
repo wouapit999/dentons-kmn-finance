@@ -48,6 +48,7 @@ import { NotificationsBell } from "@/components/notifications-bell";
 import { Pinto } from "@/components/pinto";
 import { Logo } from "@/components/logo";
 import { CameroonFlag } from "@/components/flag";
+import { NewsTicker } from "@/components/news-ticker";
 import type { MessageKey } from "@/lib/i18n";
 import type { Locale } from "@/lib/constants";
 
@@ -159,7 +160,7 @@ export function Shell({ children, user }: ShellProps) {
       <div className="flex flex-1 flex-col">
         <header className="glass sticky top-0 z-30 flex h-14 items-center justify-end gap-3 border-b border-slate-200/70 px-6 dark:border-slate-800/70">
           <span className="mr-auto flex items-center gap-2 text-xs font-medium text-slate-400">
-            <CameroonFlag className="h-4 w-6 rounded-sm shadow-sm ring-1 ring-black/5" />
+            <CameroonFlag className="flag-wave h-4 w-6 rounded-sm shadow-sm ring-1 ring-black/5" />
             <span className="hidden sm:inline">Cameroun</span>
           </span>
           <NotificationsBell />
@@ -181,6 +182,7 @@ export function Shell({ children, user }: ShellProps) {
             {theme === "light" ? <Moon size={16} /> : <Sun size={16} />}
           </Button>
         </header>
+        <NewsTicker />
         <main className="flex-1 overflow-auto p-6">{children}</main>
       </div>
       <Pinto />

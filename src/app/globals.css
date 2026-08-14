@@ -167,6 +167,38 @@ body {
 }
 @keyframes spin360 { from { transform: rotate(0deg) } to { transform: rotate(360deg) } }
 
+/* Waving Cameroon flag (top bar + ticker). */
+.flag-wave {
+  transform-origin: left center;
+  animation: flagwave 3.6s ease-in-out infinite;
+  will-change: transform;
+}
+@keyframes flagwave {
+  0%, 100% { transform: perspective(120px) rotateY(0deg) skewX(0deg); }
+  25% { transform: perspective(120px) rotateY(-14deg) skewX(3deg); }
+  50% { transform: perspective(120px) rotateY(0deg) skewX(0deg); }
+  75% { transform: perspective(120px) rotateY(14deg) skewX(-3deg); }
+}
+
+/* News ticker marquee. Two identical tracks scroll -50% for a seamless loop. */
+.ticker-bar {
+  background-color: rgba(255, 255, 255, 0.6);
+  backdrop-filter: saturate(150%) blur(10px);
+  -webkit-backdrop-filter: saturate(150%) blur(10px);
+}
+.dark .ticker-bar { background-color: rgba(17, 12, 26, 0.5); }
+.ticker-mask::before, .ticker-mask::after {
+  content: ""; position: absolute; top: 0; bottom: 0; width: 32px; z-index: 2; pointer-events: none;
+}
+.ticker-mask::before { left: 0; background: linear-gradient(90deg, rgba(246,244,251,1), transparent); }
+.ticker-mask::after { right: 0; background: linear-gradient(270deg, rgba(246,244,251,1), transparent); }
+.dark .ticker-mask::before { background: linear-gradient(90deg, rgba(10,7,16,1), transparent); }
+.dark .ticker-mask::after { background: linear-gradient(270deg, rgba(10,7,16,1), transparent); }
+.ticker-viewport { width: max-content; animation: marquee var(--dur, 40s) linear infinite; }
+.ticker-mask:hover .ticker-viewport { animation-play-state: paused; }
+.ticker-track { display: inline-flex; align-items: center; }
+@keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
 /* Slim, modern scrollbars. */
 * { scrollbar-width: thin; scrollbar-color: rgba(125,51,168,0.35) transparent; }
 *::-webkit-scrollbar { width: 8px; height: 8px; }

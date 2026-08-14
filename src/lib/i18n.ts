@@ -12,6 +12,10 @@ export const dictionaries = {
   en: {
     "app.name": "Dentons KMN ERP",
     "nav.dashboard": "Dashboard",
+    "news.label": "Dentons News",
+    "news.loading": "Loading firm news…",
+    "news.empty": "No firm news right now — check back soon.",
+    "news.notConfigured": "Live news activates once the AI key is set (AI Assistant → AI Settings).",
     "nav.users": "Users",
     "nav.roles": "Roles & Permissions",
     "nav.audit": "Audit Log",
@@ -550,6 +554,10 @@ export const dictionaries = {
   fr: {
     "app.name": "Dentons KMN ERP",
     "nav.dashboard": "Tableau de bord",
+    "news.label": "Actualités Dentons",
+    "news.loading": "Chargement des actualités…",
+    "news.empty": "Pas d'actualités pour le moment — revenez bientôt.",
+    "news.notConfigured": "Les actualités s'activent une fois la clé IA configurée (Assistant IA → Paramètres IA).",
     "nav.users": "Utilisateurs",
     "nav.roles": "Rôles et permissions",
     "nav.audit": "Journal d'audit",
