@@ -118,9 +118,11 @@ body {
   100% { opacity: 1; transform: scale(1) translateY(0); filter: blur(0); }
 }
 
-/* The planet: a shaded sphere with a spinning surface grid + specular. */
+/* The planet: a shaded sphere with a spinning surface grid + specular.
+   Positioned absolutely to fill its (relative) wrapper. */
 .globe {
-  position: relative;
+  position: absolute;
+  inset: 0;
   border-radius: 9999px;
   overflow: hidden;
   background: radial-gradient(circle at 32% 26%, #9d55c4 0%, #5b2a86 38%, #2a1147 66%, #0e0820 100%);
