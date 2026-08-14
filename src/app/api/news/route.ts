@@ -14,6 +14,21 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 const CACHE_KEY = "news.cache";
+
+// Evergreen, factual fallback shown when no live items are available yet (e.g.
+// before the AI key is funded). Real links; replaced by live news once fetched.
+const FALLBACK: Record<"en" | "fr", { title: string; summary: string; url: string; date: string | null }[]> = {
+  en: [
+    { title: "Dentons is one of the world's largest global law firms, present in 80+ countries", summary: "", url: "https://www.dentons.com", date: null },
+    { title: "Dentons insights, news and thought leadership", summary: "Explore the firm's latest publications", url: "https://www.dentons.com/en/insights", date: null },
+    { title: "Dentons in Africa — pan-African legal capability across key markets", summary: "", url: "https://www.dentons.com/en/global-presence", date: null },
+  ],
+  fr: [
+    { title: "Dentons, l'un des plus grands cabinets d'avocats au monde, présent dans plus de 80 pays", summary: "", url: "https://www.dentons.com", date: null },
+    { title: "Analyses et actualités de Dentons", summary: "Découvrez les dernières publications du cabinet", url: "https://www.dentons.com/fr", date: null },
+    { title: "Dentons en Afrique — une capacité juridique panafricaine sur les marchés clés", summary: "", url: "https://www.dentons.com/en/global-presence", date: null },
+  ],
+};
 const LOCK_KEY = "news.refreshing";
 const MAX_AGE_MS = 24 * 60 * 60 * 1000; // refresh at most once per day
 const LOCK_MS = 3 * 60 * 1000; // avoid concurrent refresh stampede
@@ -33,8 +48,14 @@ export async function GET(req: NextRequest) {
     if (!fresh) {
       const cfg = await resolveAiConfig(user.companyId);
       if (!cfg.apiKey) {
-        // Not configured: serve any stale cache, else signal not-configured.
-        return { items: cache?.[lang] ?? [], generatedAt: cache?.generatedAt ?? null, configured: false };
+        // Not configured: serve any stale cache, else the evergreen fallback.
+        const stale = cache?.[lang] ?? [];
+        return {
+          items: stale.length ? stale : FALLBACK[lang],
+          generatedAt: cache?.generatedAt ?? null,
+          configured: false,
+          live: stale.length > 0,
+        };
       }
       // Stampede guard: skip refresh if another request started one recently.
       const lock = await getSetting(user.companyId, LOCK_KEY);
@@ -53,10 +74,12 @@ export async function GET(req: NextRequest) {
       }
     }
 
+    const items = cache?.[lang] ?? [];
     return {
-      items: cache?.[lang] ?? [],
+      items: items.length ? items : FALLBACK[lang],
       generatedAt: cache?.generatedAt ?? null,
       configured: true,
+      live: items.length > 0,
     };
   });
 }
