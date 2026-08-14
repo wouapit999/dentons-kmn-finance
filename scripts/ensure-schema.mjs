@@ -119,6 +119,10 @@ const columns = [
   `ALTER TABLE "TimeEntry" ADD COLUMN IF NOT EXISTS "source" TEXT NOT NULL DEFAULT 'APP'`,
   `ALTER TABLE "Matter" ADD COLUMN IF NOT EXISTS "officeId" TEXT`,
   `ALTER TABLE "Matter" ADD COLUMN IF NOT EXISTS "entityId" TEXT`,
+  // Interns: a type flag, and employeeNo relaxed to nullable so interns need no
+  // generated number (DROP NOT NULL is not a destructive drop — no data lost).
+  `ALTER TABLE "Employee" ADD COLUMN IF NOT EXISTS "employeeType" TEXT NOT NULL DEFAULT 'EMPLOYEE'`,
+  `ALTER TABLE "Employee" ALTER COLUMN "employeeNo" DROP NOT NULL`,
 ];
 
 // --- indexes & uniques ----------------------------------------------------

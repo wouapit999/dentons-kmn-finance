@@ -17,7 +17,7 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
     const run = await prisma.payrollRun.findFirst({
       where: { id: params.id, companyId: user.companyId },
       include: {
-        payslips: { include: { employee: { select: { employeeNo: true, fullName: true } } } },
+        payslips: { include: { employee: { select: { employeeNo: true, employeeType: true, fullName: true } } } },
       },
     });
     if (!run) throw new AuthError(404, "not_found");
@@ -45,7 +45,7 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
         net: sum((p) => Number(p.net)),
       },
       payslips: run.payslips.map((p) => ({
-        employee: `${p.employee.employeeNo} — ${p.employee.fullName}`,
+        employee: `${p.employee.employeeType === "STAGIAIRE" ? "Stagiaire" : (p.employee.employeeNo ?? "—")} — ${p.employee.fullName}`,
         gross: Number(p.gross),
         cnpsEmployee: Number(p.cnpsEmployee),
         irpp: Number(p.irpp),

@@ -16,6 +16,7 @@ import { formatMoney } from "@/lib/money";
 interface Employee {
   id: string;
   employeeNo: string;
+  employeeType: "EMPLOYEE" | "STAGIAIRE";
   fullName: string;
   position: string | null;
   cnpsNo: string | null;
@@ -132,6 +133,7 @@ export default function EmployeesPage() {
 function EmployeeDialog({ canPay, employee, onClose, onSaved }: { canPay: boolean; employee?: Employee; onClose: () => void; onSaved: () => void }) {
   const t = useT();
   const isEdit = !!employee;
+  const [type, setType] = useState<"EMPLOYEE" | "STAGIAIRE">(employee?.employeeType ?? "EMPLOYEE");
   const { register, handleSubmit } = useForm({
     defaultValues: employee
       ? {
@@ -150,6 +152,7 @@ function EmployeeDialog({ canPay, employee, onClose, onSaved }: { canPay: boolea
   const save = useMutation({
     mutationFn: async (data: any) => {
       const payload: Record<string, unknown> = {
+        employeeType: type,
         fullName: data.fullName,
         position: data.position,
         cnpsNo: data.cnpsNo,
@@ -177,18 +180,33 @@ function EmployeeDialog({ canPay, employee, onClose, onSaved }: { canPay: boolea
       <Card className="w-full max-w-lg p-6">
         <h2 className="mb-4 text-lg font-semibold">{isEdit ? t("emp.edit") : t("emp.new")}</h2>
         <form onSubmit={handleSubmit((d) => save.mutate(d))} className="grid grid-cols-2 gap-3">
-          {isEdit ? (
-            <div>
-              <label className="mb-1 block text-sm font-medium">{t("emp.no")}</label>
-              <Input value={employee!.employeeNo} readOnly tabIndex={-1} className="bg-slate-100 text-slate-500 dark:bg-slate-800" />
-            </div>
-          ) : (
-            <div>
-              <label className="mb-1 block text-sm font-medium">{t("emp.no")}</label>
-              <Input value={t("emp.autoNo")} readOnly tabIndex={-1} className="bg-slate-100 text-slate-400 dark:bg-slate-800" />
-            </div>
-          )}
           <div>
+            <label className="mb-1 block text-sm font-medium">{t("emp.type")}</label>
+            <select
+              value={type}
+              onChange={(e) => setType(e.target.value as "EMPLOYEE" | "STAGIAIRE")}
+              className="h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm dark:border-slate-700 dark:bg-slate-900"
+            >
+              <option value="EMPLOYEE">{t("emp.typeEmployee")}</option>
+              <option value="STAGIAIRE">{t("emp.typeStagiaire")}</option>
+            </select>
+          </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium">{t("emp.no")}</label>
+            <Input
+              value={
+                type === "STAGIAIRE"
+                  ? t("emp.stagiaire")
+                  : isEdit
+                    ? employee!.employeeNo
+                    : t("emp.autoNo")
+              }
+              readOnly
+              tabIndex={-1}
+              className="bg-slate-100 text-slate-500 dark:bg-slate-800"
+            />
+          </div>
+          <div className="col-span-2">
             <label className="mb-1 block text-sm font-medium">{t("emp.position")}</label>
             <Input {...register("position")} />
           </div>

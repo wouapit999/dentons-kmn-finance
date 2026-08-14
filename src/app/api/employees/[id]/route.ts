@@ -9,6 +9,7 @@ import { handle } from "@/lib/api";
 import { prisma } from "@/lib/prisma";
 import { requirePermission, AuthError } from "@/lib/auth";
 import { updateEmployeeSchema } from "@/lib/validation";
+import { nextEmployeeNo } from "@/lib/employees";
 import { writeAudit } from "@/lib/audit";
 
 export const dynamic = "force-dynamic";
@@ -38,6 +39,17 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     const canSetPay = user.permissions.has("payroll:compensation");
     const data: Record<string, unknown> = {};
     if (input.employeeNo !== undefined) data.employeeNo = input.employeeNo;
+
+    // Type switch: interns lose their number (shown as "Stagiaire"); converting an
+    // intern back to a regular employee assigns a fresh EMP-#### if it has none.
+    if (input.employeeType !== undefined && input.employeeType !== emp.employeeType) {
+      data.employeeType = input.employeeType;
+      if (input.employeeType === "STAGIAIRE") {
+        data.employeeNo = null;
+      } else if (input.employeeType === "EMPLOYEE" && !emp.employeeNo) {
+        data.employeeNo = await nextEmployeeNo(user.companyId);
+      }
+    }
     if (input.fullName !== undefined) data.fullName = input.fullName;
     if (input.position !== undefined) data.position = input.position || null;
     if (input.cnpsNo !== undefined) data.cnpsNo = input.cnpsNo || null;

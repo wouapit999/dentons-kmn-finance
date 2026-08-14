@@ -9,6 +9,7 @@ import { handle } from "@/lib/api";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth";
 import { createEmployeeSchema } from "@/lib/validation";
+import { nextEmployeeNo, displayEmployeeNo } from "@/lib/employees";
 import { writeAudit } from "@/lib/audit";
 
 export const dynamic = "force-dynamic";
@@ -26,7 +27,9 @@ export async function GET() {
     });
     return employees.map((e) => ({
       id: e.id,
-      employeeNo: e.employeeNo,
+      // Interns show "Stagiaire"; employees show their generated number.
+      employeeNo: displayEmployeeNo(e),
+      employeeType: e.employeeType,
       fullName: e.fullName,
       position: e.position,
       cnpsNo: e.cnpsNo,
@@ -44,20 +47,6 @@ export async function GET() {
   });
 }
 
-// Next employee number for this company: EMP-#### (zero-padded, continues the
-// highest existing EMP-n). Assigned automatically on create.
-async function nextEmployeeNo(companyId: string): Promise<string> {
-  const existing = await prisma.employee.findMany({
-    where: { companyId, employeeNo: { startsWith: "EMP-" } },
-    select: { employeeNo: true },
-  });
-  const highest = existing.reduce((max, e) => {
-    const n = parseInt(e.employeeNo.slice(4).replace(/\D/g, ""), 10);
-    return Number.isFinite(n) && n > max ? n : max;
-  }, 0);
-  return `EMP-${String(highest + 1).padStart(4, "0")}`;
-}
-
 // POST /api/employees — add an employee. The employee number is generated
 // server-side; compensation fields are only accepted from authorised roles.
 export async function POST(req: NextRequest) {
@@ -65,30 +54,36 @@ export async function POST(req: NextRequest) {
     const user = await requirePermission("payroll:manage");
     const input = createEmployeeSchema.parse(await req.json());
     const canSetPay = user.permissions.has("payroll:compensation");
+    const isIntern = input.employeeType === "STAGIAIRE";
 
-    // Retry a couple of times in case two employees are created concurrently.
+    const baseData = {
+      companyId: user.companyId,
+      employeeType: input.employeeType,
+      fullName: input.fullName,
+      position: input.position || null,
+      baseSalary: canSetPay ? input.baseSalary : 0,
+      housingAllowance: canSetPay ? input.housingAllowance : 0,
+      transportAllowance: canSetPay ? input.transportAllowance : 0,
+      cnpsNo: input.cnpsNo || null,
+      bankAccount: canSetPay ? input.bankAccount || null : null,
+      createdById: user.id,
+    };
+
     let created;
-    for (let attempt = 0; ; attempt++) {
-      const employeeNo = await nextEmployeeNo(user.companyId);
-      try {
-        created = await prisma.employee.create({
-          data: {
-            companyId: user.companyId,
-            employeeNo,
-            fullName: input.fullName,
-            position: input.position || null,
-            baseSalary: canSetPay ? input.baseSalary : 0,
-            housingAllowance: canSetPay ? input.housingAllowance : 0,
-            transportAllowance: canSetPay ? input.transportAllowance : 0,
-            cnpsNo: input.cnpsNo || null,
-            bankAccount: canSetPay ? input.bankAccount || null : null,
-            createdById: user.id,
-          },
-        });
-        break;
-      } catch (e) {
-        if ((e as { code?: string })?.code === "P2002" && attempt < 4) continue;
-        throw e;
+    if (isIntern) {
+      // Interns carry no generated number; it stays null and displays as "Stagiaire".
+      created = await prisma.employee.create({ data: { ...baseData, employeeNo: null } });
+    } else {
+      // Retry a couple of times in case two employees are created concurrently.
+      for (let attempt = 0; ; attempt++) {
+        const employeeNo = await nextEmployeeNo(user.companyId);
+        try {
+          created = await prisma.employee.create({ data: { ...baseData, employeeNo } });
+          break;
+        } catch (e) {
+          if ((e as { code?: string })?.code === "P2002" && attempt < 4) continue;
+          throw e;
+        }
       }
     }
     await writeAudit({

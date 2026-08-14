@@ -30,7 +30,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
           include: {
             employee: {
               select: {
-                employeeNo: true, fullName: true, position: true, cnpsNo: true,
+                employeeNo: true, employeeType: true, fullName: true, position: true, cnpsNo: true,
                 baseSalary: true, housingAllowance: true, transportAllowance: true,
               },
             },
@@ -45,7 +45,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       company: "Dentons KMN",
       period: run.period,
       items: run.payslips.map((p) => ({
-        matricule: p.employee.employeeNo,
+        matricule: p.employee.employeeType === "STAGIAIRE" ? "Stagiaire" : (p.employee.employeeNo ?? "—"),
         name: p.employee.fullName,
         position: p.employee.position,
         cnpsNo: p.employee.cnpsNo,

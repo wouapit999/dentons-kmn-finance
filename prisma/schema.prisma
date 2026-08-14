@@ -771,7 +771,11 @@ model VendorPayment {
 model Employee {
   id                 String   @id @default(uuid())
   companyId          String
-  employeeNo         String
+  // Interns (STAGIAIRE) have no generated number — it is left null and shown as
+  // "Stagiaire" in the UI. Postgres allows many nulls under the unique index, so
+  // several interns can coexist without clashing.
+  employeeNo         String?
+  employeeType       String   @default("EMPLOYEE") // EMPLOYEE | STAGIAIRE
   fullName           String
   position           String?
   baseSalary         Decimal  @default(0)

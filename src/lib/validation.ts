@@ -226,6 +226,9 @@ export type PayBillInput = z.infer<typeof payBillSchema>;
 export const createEmployeeSchema = z.object({
   // employeeNo is assigned automatically by the server; accepted but ignored.
   employeeNo: z.string().max(30).optional(),
+  // EMPLOYEE gets an auto-generated EMP-#### number; STAGIAIRE (intern) has none
+  // and is shown as "Stagiaire".
+  employeeType: z.enum(["EMPLOYEE", "STAGIAIRE"]).default("EMPLOYEE"),
   fullName: z.string().min(2).max(160),
   position: z.string().max(120).optional().or(z.literal("")),
   baseSalary: z.number().nonnegative().default(0),
@@ -239,6 +242,7 @@ export type CreateEmployeeInput = z.infer<typeof createEmployeeSchema>;
 // Update: every field optional so callers can change any subset.
 export const updateEmployeeSchema = z.object({
   employeeNo: z.string().min(1).max(30).optional(),
+  employeeType: z.enum(["EMPLOYEE", "STAGIAIRE"]).optional(),
   fullName: z.string().min(2).max(160).optional(),
   position: z.string().max(120).optional().or(z.literal("")),
   baseSalary: z.number().nonnegative().optional(),
