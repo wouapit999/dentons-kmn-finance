@@ -47,8 +47,13 @@ export async function POST(_req: NextRequest, { params }: { params: { id: string
         screening = r.report;
         riskLevel = r.riskLevel;
         source = "internet";
-      } catch {
+      } catch (e) {
         // Provider outage should not block onboarding — fall back, flag for review.
+        // Log the real cause (never silently swallow) so failures are diagnosable;
+        // the message is written to server logs only, never to the client file.
+        const detail = e instanceof Error ? `${e.name}: ${e.message}` : String(e);
+        const status = (e as { status?: number })?.status;
+        console.error(`kyc-verify: AI screening failed (status=${status ?? "?"}) - ${detail}`);
         screening = "_Automated internet screening failed (provider error). Manual screening required._";
         riskLevel = "MEDIUM";
         source = "internal";
