@@ -37,7 +37,6 @@ export async function POST(_req: NextRequest, { params }: { params: { id: string
     let screening: string;
     let riskLevel: "LOW" | "MEDIUM" | "HIGH";
     let source: "internet" | "internal";
-    let screeningError: string | null = null; // TEMP diagnostic (returned, not stored)
 
     if (cfg.apiKey) {
       try {
@@ -55,7 +54,6 @@ export async function POST(_req: NextRequest, { params }: { params: { id: string
         const detail = e instanceof Error ? `${e.name}: ${e.message}` : String(e);
         const status = (e as { status?: number })?.status;
         console.error(`kyc-verify: AI screening failed (status=${status ?? "?"}) - ${detail}`);
-        screeningError = `status=${status ?? "?"} ${detail}`.slice(0, 400);
         screening = "_Automated internet screening failed (provider error). Manual screening required._";
         riskLevel = "MEDIUM";
         source = "internal";
@@ -128,6 +126,6 @@ export async function POST(_req: NextRequest, { params }: { params: { id: string
       after: { kycStatus: verified ? "VERIFIED" : "PENDING", riskLevel, source, reportDocId: doc.id },
     });
 
-    return { kycStatus: verified ? "VERIFIED" : "PENDING", riskLevel, source, reportDocId: doc.id, screeningError };
+    return { kycStatus: verified ? "VERIFIED" : "PENDING", riskLevel, source, reportDocId: doc.id };
   });
 }
