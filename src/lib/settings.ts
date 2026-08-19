@@ -14,6 +14,8 @@ import { prisma } from "./prisma";
 export const SETTING_KEYS = {
   aiApiKey: "ai.anthropic_api_key", // encrypted
   aiModel: "ai.model", // plain
+  geminiApiKey: "ai.gemini_api_key", // encrypted — used for KYC internet screening
+  geminiModel: "ai.gemini_model", // plain
 } as const;
 
 const ENC_PREFIX = "enc:v1:";
@@ -91,6 +93,27 @@ export async function resolveAiConfig(
   const model = clean(dbModel) || clean(process.env.AI_MODEL) || "claude-sonnet-5";
   const settingsKey = clean(dbKey);
   const envKey = clean(process.env.ANTHROPIC_API_KEY);
+  if (settingsKey) return { apiKey: settingsKey, model, source: "settings" };
+  if (envKey) return { apiKey: envKey, model, source: "env" };
+  return { apiKey: null, model, source: "none" };
+}
+
+/**
+ * Resolve the Google Gemini configuration for a company. Used for KYC internet
+ * screening (Gemini's free tier includes Google Search grounding). In-app key
+ * wins; GEMINI_API_KEY env is the fallback.
+ */
+export async function resolveGeminiConfig(
+  companyId: string,
+): Promise<{ apiKey: string | null; model: string; source: "settings" | "env" | "none" }> {
+  const [dbKey, dbModel] = await Promise.all([
+    getSetting(companyId, SETTING_KEYS.geminiApiKey),
+    getSetting(companyId, SETTING_KEYS.geminiModel),
+  ]);
+  const clean = (v: string | null | undefined) => (v ? v.replace(/^﻿/, "").trim() : "");
+  const model = clean(dbModel) || clean(process.env.GEMINI_MODEL) || "gemini-2.0-flash";
+  const settingsKey = clean(dbKey);
+  const envKey = clean(process.env.GEMINI_API_KEY);
   if (settingsKey) return { apiKey: settingsKey, model, source: "settings" };
   if (envKey) return { apiKey: envKey, model, source: "env" };
   return { apiKey: null, model, source: "none" };

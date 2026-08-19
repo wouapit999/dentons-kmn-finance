@@ -13,6 +13,7 @@ import {
   setSetting,
   deleteSetting,
   resolveAiConfig,
+  resolveGeminiConfig,
   maskKey,
 } from "@/lib/settings";
 import { writeAudit } from "@/lib/audit";
@@ -29,19 +30,38 @@ const putSchema = z.object({
     })
     .optional(),
   model: z.string().trim().max(80).optional(),
+  geminiApiKey: z
+    .string()
+    .trim()
+    .max(300)
+    .refine((k) => k === "" || k.startsWith("AIza"), {
+      message: "Gemini keys start with AIza",
+    })
+    .optional(),
+  geminiModel: z.string().trim().max(80).optional(),
 });
 
-// GET /api/settings/ai — current AI configuration (key masked). IT Admin only.
+async function aiSettingsPayload(companyId: string) {
+  const [cfg, gem] = await Promise.all([resolveAiConfig(companyId), resolveGeminiConfig(companyId)]);
+  return {
+    // Anthropic (Claude) — NL reports, OCR, assistant.
+    configured: !!cfg.apiKey,
+    source: cfg.source, // settings | env | none
+    maskedKey: cfg.apiKey ? maskKey(cfg.apiKey) : null,
+    model: cfg.model,
+    // Gemini — KYC internet screening (free-tier Google Search grounding).
+    geminiConfigured: !!gem.apiKey,
+    geminiSource: gem.source,
+    geminiMaskedKey: gem.apiKey ? maskKey(gem.apiKey) : null,
+    geminiModel: gem.model,
+  };
+}
+
+// GET /api/settings/ai — current AI configuration (keys masked). IT Admin only.
 export async function GET() {
   return handle(async () => {
     const admin = await requirePermission("user:manage");
-    const cfg = await resolveAiConfig(admin.companyId);
-    return {
-      configured: !!cfg.apiKey,
-      source: cfg.source, // settings | env | none
-      maskedKey: cfg.apiKey ? maskKey(cfg.apiKey) : null,
-      model: cfg.model,
-    };
+    return aiSettingsPayload(admin.companyId);
   });
 }
 
@@ -69,26 +89,39 @@ export async function PUT(req: NextRequest) {
       });
     }
 
+    if (input.geminiApiKey !== undefined) {
+      if (input.geminiApiKey === "") {
+        await deleteSetting(admin.companyId, SETTING_KEYS.geminiApiKey);
+      } else {
+        await setSetting(admin.companyId, SETTING_KEYS.geminiApiKey, input.geminiApiKey, {
+          secret: true,
+          updatedBy: admin.id,
+        });
+      }
+    }
+    if (input.geminiModel !== undefined && input.geminiModel !== "") {
+      await setSetting(admin.companyId, SETTING_KEYS.geminiModel, input.geminiModel, {
+        updatedBy: admin.id,
+      });
+    }
+
     await writeAudit({
       companyId: admin.companyId,
       actorId: admin.id,
       action: "AI_SETTINGS_UPDATED",
       entityType: "Setting",
       entityId: null,
-      // Never write the key itself to the audit log.
+      // Never write the keys themselves to the audit log.
       after: {
         keyChanged: input.apiKey !== undefined,
         keyCleared: input.apiKey === "",
         model: input.model || undefined,
+        geminiKeyChanged: input.geminiApiKey !== undefined,
+        geminiKeyCleared: input.geminiApiKey === "",
+        geminiModel: input.geminiModel || undefined,
       },
     });
 
-    const cfg = await resolveAiConfig(admin.companyId);
-    return {
-      configured: !!cfg.apiKey,
-      source: cfg.source,
-      maskedKey: cfg.apiKey ? maskKey(cfg.apiKey) : null,
-      model: cfg.model,
-    };
+    return aiSettingsPayload(admin.companyId);
   });
 }

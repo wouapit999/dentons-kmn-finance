@@ -8,8 +8,8 @@ import { NextRequest } from "next/server";
 import { handle } from "@/lib/api";
 import { prisma } from "@/lib/prisma";
 import { requirePermission, AuthError } from "@/lib/auth";
-import { kycScreen } from "@/lib/ai";
-import { resolveAiConfig } from "@/lib/settings";
+import { kycScreen, kycScreenGemini } from "@/lib/ai";
+import { resolveAiConfig, resolveGeminiConfig } from "@/lib/settings";
 import { writeAudit } from "@/lib/audit";
 
 export const dynamic = "force-dynamic";
@@ -33,37 +33,58 @@ export async function POST(_req: NextRequest, { params }: { params: { id: string
     });
     if (!client) throw new AuthError(404, "not_found");
 
-    const cfg = await resolveAiConfig(user.companyId);
+    const [anthropic, gemini] = await Promise.all([
+      resolveAiConfig(user.companyId),
+      resolveGeminiConfig(user.companyId),
+    ]);
+    const subject = {
+      name: client.name, type: client.type, taxId: client.taxId, email: client.email, country: "Cameroon",
+    };
+
+    // Try each configured internet-screening engine in order. Gemini is first
+    // because its free tier includes Google Search grounding (no paid credit);
+    // Anthropic (Claude web search) is the fallback if a funded key is set.
+    const engines: { name: string; run: () => Promise<{ report: string; riskLevel: "LOW" | "MEDIUM" | "HIGH" }> }[] = [];
+    if (gemini.apiKey) engines.push({ name: "gemini", run: () => kycScreenGemini(subject, { apiKey: gemini.apiKey!, model: gemini.model }) });
+    if (anthropic.apiKey) engines.push({ name: "anthropic", run: () => kycScreen(subject, anthropic) });
+
     let screening: string;
     let riskLevel: "LOW" | "MEDIUM" | "HIGH";
     let source: "internet" | "internal";
+    let ran = false;
+    riskLevel = "MEDIUM";
+    source = "internal";
+    screening = "";
 
-    if (cfg.apiKey) {
+    for (const engine of engines) {
       try {
-        const r = await kycScreen(
-          { name: client.name, type: client.type, taxId: client.taxId, email: client.email, country: "Cameroon" },
-          cfg,
-        );
+        const r = await engine.run();
         screening = r.report;
         riskLevel = r.riskLevel;
         source = "internet";
+        ran = true;
+        break;
       } catch (e) {
-        // Provider outage should not block onboarding — fall back, flag for review.
-        // Log the real cause (never silently swallow) so failures are diagnosable;
-        // the message is written to server logs only, never to the client file.
+        // Never silently swallow — log the real cause (server logs only, never the
+        // client file) so failures stay diagnosable; then try the next engine.
         const detail = e instanceof Error ? `${e.name}: ${e.message}` : String(e);
         const status = (e as { status?: number })?.status;
-        console.error(`kyc-verify: AI screening failed (status=${status ?? "?"}) - ${detail}`);
+        console.error(`kyc-verify: ${engine.name} screening failed (status=${status ?? "?"}) - ${detail}`);
+      }
+    }
+
+    if (!ran) {
+      if (engines.length === 0) {
+        screening =
+          "_Automated internet screening unavailable — no AI key configured. " +
+          "This report is based on internal records only; complete manual screening " +
+          "(sanctions lists, registry extracts) before onboarding high-value clients._";
+        riskLevel = client.amlRisk === "HIGH" ? "HIGH" : "LOW";
+      } else {
+        // A key is configured but every provider errored — flag for manual review.
         screening = "_Automated internet screening failed (provider error). Manual screening required._";
         riskLevel = "MEDIUM";
-        source = "internal";
       }
-    } else {
-      screening =
-        "_Automated internet screening unavailable — no AI key configured. " +
-        "This report is based on internal records only; complete manual screening " +
-        "(sanctions lists, registry extracts) before onboarding high-value clients._";
-      riskLevel = client.amlRisk === "HIGH" ? "HIGH" : "LOW";
       source = "internal";
     }
 

@@ -86,24 +86,8 @@ export async function kycScreen(
     max_tokens: 2500,
     // Server-side web search tool — the model searches the public internet.
     tools: [{ type: "web_search_20250305", name: "web_search", max_uses: 6 } as never],
-    system:
-      "You are a KYC/AML due-diligence analyst for Dentons KMN, a law firm in Cameroon. " +
-      "Screen the subject using web search: (1) identity & business registrations, " +
-      "(2) sanctions lists / PEP indications, (3) adverse media (fraud, corruption, money laundering, litigation), " +
-      "(4) overall reputation. Write a concise markdown report with sections: Identity, " +
-      "Sanctions & PEP, Adverse Media, Business Footprint, Sources (URLs), Risk Assessment. " +
-      "Be factual; if nothing is found, say so — absence of findings is a valid result. " +
-      "END the report with exactly one line: RISK_LEVEL: LOW or RISK_LEVEL: MEDIUM or RISK_LEVEL: HIGH.",
-    messages: [
-      {
-        role: "user",
-        content:
-          `Screen this prospective client:\n` +
-          `Name: ${subject.name}\nType: ${subject.type}\nCountry: ${subject.country}` +
-          (subject.taxId ? `\nTax ID: ${subject.taxId}` : "") +
-          (subject.email ? `\nEmail domain: ${subject.email.split("@")[1] ?? ""}` : ""),
-      },
-    ],
+    system: KYC_SYSTEM,
+    messages: [{ role: "user", content: kycPrompt(subject) }],
   });
 
   const report = msg.content
@@ -111,9 +95,78 @@ export async function kycScreen(
     .map((b) => b.text)
     .join("\n")
     .trim();
+  return { report, riskLevel: parseRisk(report) };
+}
+
+// Shared KYC/AML analyst brief — same instructions across providers so the
+// report shape (and the trailing RISK_LEVEL line) is identical.
+const KYC_SYSTEM =
+  "You are a KYC/AML due-diligence analyst for Dentons KMN, a law firm in Cameroon. " +
+  "Screen the subject using web search: (1) identity & business registrations, " +
+  "(2) sanctions lists / PEP indications, (3) adverse media (fraud, corruption, money laundering, litigation), " +
+  "(4) overall reputation. Write a concise markdown report with sections: Identity, " +
+  "Sanctions & PEP, Adverse Media, Business Footprint, Sources (URLs), Risk Assessment. " +
+  "Be factual; if nothing is found, say so — absence of findings is a valid result. " +
+  "END the report with exactly one line: RISK_LEVEL: LOW or RISK_LEVEL: MEDIUM or RISK_LEVEL: HIGH.";
+
+function kycPrompt(subject: {
+  name: string;
+  type: string;
+  taxId?: string | null;
+  email?: string | null;
+  country: string;
+}): string {
+  return (
+    `Screen this prospective client:\n` +
+    `Name: ${subject.name}\nType: ${subject.type}\nCountry: ${subject.country}` +
+    (subject.taxId ? `\nTax ID: ${subject.taxId}` : "") +
+    (subject.email ? `\nEmail domain: ${subject.email.split("@")[1] ?? ""}` : "")
+  );
+}
+
+function parseRisk(report: string): "LOW" | "MEDIUM" | "HIGH" {
   const m = report.match(/RISK_LEVEL:\s*(LOW|MEDIUM|HIGH)/i);
-  const riskLevel = (m ? m[1].toUpperCase() : "MEDIUM") as "LOW" | "MEDIUM" | "HIGH";
-  return { report, riskLevel };
+  return (m ? m[1].toUpperCase() : "MEDIUM") as "LOW" | "MEDIUM" | "HIGH";
+}
+
+/**
+ * KYC/AML internet screening via Google Gemini with Google Search grounding.
+ * Uses the REST API directly (no SDK dependency). Gemini's free tier includes
+ * grounded search, so this path needs no paid credit. Throws on provider error
+ * (the caller logs it and falls back).
+ */
+export async function kycScreenGemini(
+  subject: { name: string; type: string; taxId?: string | null; email?: string | null; country: string },
+  cfg: { apiKey: string; model: string },
+): Promise<{ report: string; riskLevel: "LOW" | "MEDIUM" | "HIGH" }> {
+  const url =
+    `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(cfg.model)}:generateContent` +
+    `?key=${encodeURIComponent(cfg.apiKey)}`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      system_instruction: { parts: [{ text: KYC_SYSTEM }] },
+      contents: [{ role: "user", parts: [{ text: kycPrompt(subject) }] }],
+      // Google Search grounding tool (Gemini 2.x). Lets the model search the web.
+      tools: [{ google_search: {} }],
+    }),
+  });
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    const err = new Error(`Gemini API ${res.status}: ${body.slice(0, 300)}`) as Error & { status?: number };
+    err.status = res.status;
+    throw err;
+  }
+  const data = (await res.json()) as {
+    candidates?: { content?: { parts?: { text?: string }[] } }[];
+  };
+  const report = (data.candidates?.[0]?.content?.parts ?? [])
+    .map((p) => p.text ?? "")
+    .join("\n")
+    .trim();
+  if (!report) throw new Error("Gemini returned an empty screening report");
+  return { report, riskLevel: parseRisk(report) };
 }
 
 /**
