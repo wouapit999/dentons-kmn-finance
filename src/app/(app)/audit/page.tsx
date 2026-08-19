@@ -32,7 +32,7 @@ export default function AuditPage() {
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-semibold">{t("audit.title")}</h1>
-      <Card className="overflow-hidden">
+      <Card className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500 dark:bg-slate-800/50">
             <tr>

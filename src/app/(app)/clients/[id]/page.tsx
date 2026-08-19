@@ -142,7 +142,7 @@ export default function ClientFilePage() {
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <div className="space-y-6">
-          <Card className="overflow-hidden">
+          <Card className="overflow-x-auto">
             <div className="border-b border-slate-100 px-4 py-3 text-sm font-semibold uppercase tracking-wide text-slate-500 dark:border-slate-800">
               {t("file.matters")} ({d.matters.length})
             </div>
@@ -165,7 +165,7 @@ export default function ClientFilePage() {
             </table>
           </Card>
 
-          <Card className="overflow-hidden">
+          <Card className="overflow-x-auto">
             <div className="border-b border-slate-100 px-4 py-3 text-sm font-semibold uppercase tracking-wide text-slate-500 dark:border-slate-800">
               {t("file.invoices")} ({d.billing.invoiceCount})
             </div>

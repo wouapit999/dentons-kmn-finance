@@ -134,7 +134,7 @@ export default function TrustDetailPage() {
 
           <div>
             <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500">{t("trust.ledger")}</h2>
-            <Card className="overflow-hidden">
+            <Card className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500 dark:bg-slate-800/50">
                   <tr>

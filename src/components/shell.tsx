@@ -7,7 +7,7 @@
  */
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import {
   LayoutDashboard,
   Users,
@@ -40,6 +40,8 @@ import {
   LogOut,
   Moon,
   Sun,
+  Menu,
+  X,
 } from "lucide-react";
 import { useT } from "@/lib/useT";
 import { useUi } from "@/lib/store";
@@ -61,12 +63,18 @@ export function Shell({ children, user }: ShellProps) {
   const path = usePathname();
   const router = useRouter();
   const { theme, toggleTheme, setLocale, locale } = useUi();
+  const [mobileNav, setMobileNav] = useState(false);
 
   // Sync store locale with the server-persisted user locale on first load.
   useEffect(() => {
     setLocale(user.locale);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Close the mobile drawer whenever the route changes.
+  useEffect(() => {
+    setMobileNav(false);
+  }, [path]);
 
   const nav: { href: string; label: MessageKey; icon: React.ReactNode; perm?: string }[] = [
     { href: "/dashboard", label: "nav.dashboard", icon: <LayoutDashboard size={18} /> },
@@ -120,7 +128,29 @@ export function Shell({ children, user }: ShellProps) {
 
   return (
     <div className="flex min-h-screen">
-      <aside className="glass flex w-60 flex-col border-r border-slate-200/70 dark:border-slate-800/70">
+      {/* Backdrop for the mobile drawer */}
+      {mobileNav && (
+        <div
+          className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm lg:hidden"
+          onClick={() => setMobileNav(false)}
+          aria-hidden="true"
+        />
+      )}
+      <aside
+        className={cn(
+          "glass fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-slate-200/70 transition-transform duration-200 dark:border-slate-800/70",
+          "lg:static lg:z-auto lg:w-60 lg:translate-x-0",
+          mobileNav ? "translate-x-0" : "-translate-x-full",
+        )}
+      >
+        {/* Close button (mobile only) */}
+        <button
+          onClick={() => setMobileNav(false)}
+          className="absolute right-3 top-3 rounded-md p-1.5 text-slate-500 hover:bg-slate-100 lg:hidden dark:hover:bg-slate-800"
+          aria-label="Close menu"
+        >
+          <X size={18} />
+        </button>
         <div className="relative overflow-hidden px-5 py-4">
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-brand-500/10 via-transparent to-cmr-green/10" />
           <div className="relative">
@@ -160,8 +190,16 @@ export function Shell({ children, user }: ShellProps) {
         </div>
       </aside>
 
-      <div className="flex flex-1 flex-col">
-        <header className="glass sticky top-0 z-30 flex h-14 items-center justify-end gap-3 border-b border-slate-200/70 px-6 dark:border-slate-800/70">
+      <div className="flex min-w-0 flex-1 flex-col">
+        <header className="glass sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-slate-200/70 px-4 sm:px-6 dark:border-slate-800/70">
+          <button
+            onClick={() => setMobileNav(true)}
+            className="rounded-md p-1.5 text-slate-600 hover:bg-slate-100 lg:hidden dark:text-slate-300 dark:hover:bg-slate-800"
+            aria-label="Open menu"
+          >
+            <Menu size={20} />
+          </button>
+          <div className="ml-auto flex items-center gap-3">
           <NotificationsBell />
           <div className="flex items-center gap-1 text-xs">
             <button
@@ -180,9 +218,10 @@ export function Shell({ children, user }: ShellProps) {
           <Button variant="ghost" size="sm" onClick={toggleTheme} aria-label="Toggle theme">
             {theme === "light" ? <Moon size={16} /> : <Sun size={16} />}
           </Button>
+          </div>
         </header>
         <NewsTicker />
-        <main className="flex-1 overflow-auto p-6">{children}</main>
+        <main className="flex-1 overflow-auto p-4 sm:p-6">{children}</main>
       </div>
       <Pinto />
     </div>

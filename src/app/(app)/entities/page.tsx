@@ -48,7 +48,7 @@ export default function EntitiesPage() {
       </div>
 
       {/* Legal entities */}
-      <Card className="overflow-hidden">
+      <Card className="overflow-x-auto">
         <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3 dark:border-slate-800">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">{t("ent.entities")}</h2>
           {canManage && <Button size="sm" onClick={() => setAddEntity(true)}>+ {t("ent.newEntity")}</Button>}
@@ -85,7 +85,7 @@ export default function EntitiesPage() {
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Offices */}
-        <Card className="overflow-hidden">
+        <Card className="overflow-x-auto">
           <div className="border-b border-slate-100 px-4 py-3 dark:border-slate-800">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">{t("ent.offices")}</h2>
           </div>
@@ -113,7 +113,7 @@ export default function EntitiesPage() {
         </Card>
 
         {/* FX rates */}
-        <Card className="overflow-hidden">
+        <Card className="overflow-x-auto">
           <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3 dark:border-slate-800">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">{t("ent.fx")} · {t("ent.base")} {q.data?.baseCurrency}</h2>
             {canManage && <Button size="sm" onClick={() => setAddRate(true)}>+ {t("ent.newRate")}</Button>}

@@ -144,7 +144,7 @@ export default function MatterDetailPage() {
       </Card>
 
       {/* Drill-through: client's attached files */}
-      <Card className="overflow-hidden">
+      <Card className="overflow-x-auto">
         <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3 dark:border-slate-800">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">{t("matters.clientFiles")}</h2>
           <span className="text-xs text-slate-400">{t("matters.clientFilesHint")}</span>
