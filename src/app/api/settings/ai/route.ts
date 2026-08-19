@@ -34,8 +34,11 @@ const putSchema = z.object({
     .string()
     .trim()
     .max(300)
-    .refine((k) => k === "" || k.startsWith("AIza"), {
-      message: "Gemini keys start with AIza",
+    // Accept any non-trivial key. Google issues several formats (older "AIza…",
+    // newer "AQ.…"), so we don't hard-code a prefix — the real check is Google
+    // rejecting it at call time. Empty clears the stored key.
+    .refine((k) => k === "" || k.length >= 20, {
+      message: "Enter a valid Gemini API key",
     })
     .optional(),
   geminiModel: z.string().trim().max(80).optional(),
