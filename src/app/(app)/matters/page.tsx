@@ -6,10 +6,12 @@
  * or use of this file, via any medium, is strictly prohibited.
  */
 import { useState } from "react";
+import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button, Input, Card, Badge } from "@/components/ui";
 import { useT } from "@/lib/useT";
+import { COURT_TYPES, courtLocationGroups, type CourtType } from "@/lib/courts";
 
 interface Matter {
   id: string;
@@ -30,6 +32,7 @@ interface Meta {
   clients: MetaClient[];
   practiceAreas: { id: string; name: string }[];
   partners: { id: string; fullName: string }[];
+  employees: { id: string; fullName: string; position: string | null }[];
   suggestedCode?: string;
 }
 
@@ -134,9 +137,13 @@ export default function MattersPage() {
               <tr><td colSpan={6} className="px-4 py-6 text-center text-slate-400">—</td></tr>
             )}
             {matters.data?.map((m) => (
-              <tr key={m.id}>
-                <td className="px-4 py-2.5 font-mono">{m.code}</td>
-                <td className="px-4 py-2.5 font-medium">{m.name}</td>
+              <tr key={m.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/30">
+                <td className="px-4 py-2.5 font-mono">
+                  <Link href={`/matters/${m.id}`} className="text-brand-700 hover:underline dark:text-brand-300">{m.code}</Link>
+                </td>
+                <td className="px-4 py-2.5 font-medium">
+                  <Link href={`/matters/${m.id}`} className="hover:underline">{m.name}</Link>
+                </td>
                 <td className="px-4 py-2.5">{m.client}</td>
                 <td className="px-4 py-2.5 text-slate-500">{m.practiceArea ?? "—"}</td>
                 <td className="px-4 py-2.5 text-slate-500">{m.partner ?? "—"}</td>
@@ -203,8 +210,9 @@ function NewMatterDialog({
   onCreated: () => void;
 }) {
   const t = useT();
-  const { register, handleSubmit } = useForm();
+  const { register, handleSubmit, watch } = useForm();
   const [error, setError] = useState<string | null>(null);
+  const courtType = (watch("courtType") ?? "") as CourtType | "";
 
   const create = useMutation({
     mutationFn: async (data: any) => {
@@ -239,7 +247,7 @@ function NewMatterDialog({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <Card className="w-full max-w-md p-6">
+      <Card className="max-h-[92vh] w-full max-w-2xl overflow-y-auto p-6">
         <h2 className="mb-4 text-lg font-semibold">{t("matters.new")}</h2>
         {noClients ? (
           <p className="text-sm text-amber-600">{t("matters.noEligible")}</p>
@@ -291,13 +299,71 @@ function NewMatterDialog({
               <label className="mb-1 block text-sm font-medium">{t("matters.name")}</label>
               <Input autoComplete="off" {...register("name", { required: true })} />
             </div>
-            <div>
-              <label className="mb-1 block text-sm font-medium">{t("matters.partner")}</label>
-              <select className="h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm dark:border-slate-700 dark:bg-slate-900" {...register("responsiblePartnerId")}>
-                <option value="">—</option>
-                {meta!.partners.map((p) => <option key={p.id} value={p.id}>{p.fullName}</option>)}
-              </select>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="mb-1 block text-sm font-medium">{t("matters.partner")}</label>
+                <select className="h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm dark:border-slate-700 dark:bg-slate-900" {...register("responsiblePartnerId")}>
+                  <option value="">—</option>
+                  {meta!.partners.map((p) => <option key={p.id} value={p.id}>{p.fullName}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium">{t("matters.mainLawyer")}</label>
+                <select className="h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm dark:border-slate-700 dark:bg-slate-900" {...register("mainLawyerId")}>
+                  <option value="">—</option>
+                  {(meta?.employees ?? []).map((e) => (
+                    <option key={e.id} value={e.id}>{e.fullName}{e.position ? ` (${e.position})` : ""}</option>
+                  ))}
+                </select>
+              </div>
             </div>
+
+            <div>
+              <label className="mb-1 block text-sm font-medium">{t("matters.nature")}</label>
+              <Input autoComplete="off" placeholder={t("matters.naturePlaceholder")} {...register("nature")} />
+            </div>
+
+            {/* Court jurisdiction (litigation matters) */}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="mb-1 block text-sm font-medium">{t("matters.courtType")}</label>
+                <select className="h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm dark:border-slate-700 dark:bg-slate-900" defaultValue="" {...register("courtType")}>
+                  <option value="">{t("matters.notLitigious")}</option>
+                  {COURT_TYPES.map((c) => <option key={c.value} value={c.value}>{c.en}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium">{t("matters.courtLocation")}</label>
+                <select className="h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900" disabled={!courtType} {...register("courtLocation")}>
+                  <option value="">—</option>
+                  {courtLocationGroups(courtType).map((g) => (
+                    <optgroup key={g.region} label={g.region}>
+                      {g.towns.map((town) => <option key={town} value={town}>{town}</option>)}
+                    </optgroup>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="mb-1 block text-sm font-medium">{t("matters.adversary")}</label>
+                <Input autoComplete="off" {...register("adversary")} />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium">{t("matters.audienceAt")}</label>
+                <Input type="datetime-local" {...register("audienceAt")} />
+              </div>
+            </div>
+
+            <div>
+              <label className="mb-1 block text-sm font-medium">{t("matters.notes")}</label>
+              <textarea
+                className="min-h-[60px] w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900"
+                {...register("notes")}
+              />
+            </div>
+
             {error && <p className="text-sm text-red-600">{errorText(error)}</p>}
             <div className="flex justify-end gap-2 pt-2">
               <Button type="button" variant="outline" onClick={onClose}>{t("common.cancel")}</Button>

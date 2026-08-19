@@ -17,7 +17,7 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   return handle(async () => {
     const user = await requirePermission("matter:read");
-    const [clients, practiceAreas, partners] = await Promise.all([
+    const [clients, practiceAreas, partners, employees] = await Promise.all([
       prisma.client.findMany({
         where: { companyId: user.companyId, deletedAt: null },
         select: { id: true, name: true, kycStatus: true, conflictStatus: true },
@@ -31,6 +31,12 @@ export async function GET() {
       prisma.user.findMany({
         where: { companyId: user.companyId, status: "ACTIVE", deletedAt: null },
         select: { id: true, fullName: true },
+        orderBy: { fullName: "asc" },
+      }),
+      // The main lawyer is chosen from the Employee list (active staff).
+      prisma.employee.findMany({
+        where: { companyId: user.companyId, status: "ACTIVE" },
+        select: { id: true, fullName: true, position: true },
         orderBy: { fullName: "asc" },
       }),
     ]);
@@ -49,6 +55,6 @@ export async function GET() {
     }, 0);
     const suggestedCode = `${prefix}${String(highest + 1).padStart(5, "0")}`;
 
-    return { clients, practiceAreas, partners, suggestedCode };
+    return { clients, practiceAreas, partners, employees, suggestedCode };
   });
 }

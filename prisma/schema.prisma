@@ -475,6 +475,14 @@ model Matter {
   currency            String   @default("XAF")
   officeId            String?
   entityId            String?
+  // Litigation & summary details
+  nature              String?   // nature of the matter (short description)
+  adversary           String?   // opposing party
+  mainLawyerId        String?   // lead lawyer, chosen from the Employee list
+  courtType           String?   // COURT_OF_FIRST_INSTANCE | HIGH_COURT | COURT_OF_APPEAL
+  courtLocation       String?   // court seat/town (Cameroon)
+  audienceAt          DateTime? // next hearing (audience) date & time
+  notes               String?
   openedAt            DateTime @default(now())
   createdById         String?
   createdAt           DateTime @default(now())
@@ -483,6 +491,7 @@ model Matter {
   client            Client        @relation(fields: [clientId], references: [id])
   practiceArea      PracticeArea? @relation(fields: [practiceAreaId], references: [id])
   responsiblePartner User?        @relation("MatterPartner", fields: [responsiblePartnerId], references: [id])
+  mainLawyer        Employee?     @relation("MatterMainLawyer", fields: [mainLawyerId], references: [id])
   office            Office?       @relation(fields: [officeId], references: [id])
   entity            LegalEntity?  @relation(fields: [entityId], references: [id])
   timeEntries       TimeEntry[]
@@ -791,6 +800,7 @@ model Employee {
 
   company  Company   @relation(fields: [companyId], references: [id])
   payslips Payslip[]
+  mainLawyerMatters Matter[] @relation("MatterMainLawyer")
 
   @@unique([companyId, employeeNo])
   @@index([companyId])

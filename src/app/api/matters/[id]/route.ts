@@ -5,34 +5,81 @@
  * or use of this file, via any medium, is strictly prohibited.
  */
 import { NextRequest } from "next/server";
-import { z } from "zod";
 import { handle } from "@/lib/api";
 import { prisma } from "@/lib/prisma";
 import { requirePermission, AuthError } from "@/lib/auth";
+import { updateMatterSchema } from "@/lib/validation";
+import { matterDetailData, assertMainLawyer } from "@/lib/matters";
 import { writeAudit } from "@/lib/audit";
 
 export const dynamic = "force-dynamic";
 
-const patchSchema = z.object({ status: z.enum(["OPEN", "ON_HOLD", "CLOSED"]) });
+// GET /api/matters/:id — full matter summary (litigation details + linked names),
+// plus the clientId so the UI can drill through to the client's attached files.
+export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
+  return handle(async () => {
+    const user = await requirePermission("matter:read");
+    const m = await prisma.matter.findFirst({
+      where: { id: params.id, companyId: user.companyId },
+      include: {
+        client: { select: { id: true, name: true, type: true } },
+        practiceArea: { select: { name: true } },
+        responsiblePartner: { select: { fullName: true } },
+        mainLawyer: { select: { id: true, fullName: true, position: true } },
+        office: { select: { name: true } },
+        entity: { select: { code: true, name: true } },
+      },
+    });
+    if (!m) throw new AuthError(404, "not_found");
+    return {
+      id: m.id,
+      code: m.code,
+      name: m.name,
+      status: m.status,
+      currency: m.currency,
+      clientId: m.client.id,
+      client: m.client.name,
+      clientType: m.client.type,
+      practiceArea: m.practiceArea?.name ?? null,
+      partner: m.responsiblePartner?.fullName ?? null,
+      nature: m.nature,
+      adversary: m.adversary,
+      mainLawyerId: m.mainLawyerId,
+      mainLawyer: m.mainLawyer?.fullName ?? null,
+      mainLawyerPosition: m.mainLawyer?.position ?? null,
+      courtType: m.courtType,
+      courtLocation: m.courtLocation,
+      audienceAt: m.audienceAt,
+      notes: m.notes,
+      office: m.office?.name ?? null,
+      entity: m.entity ? `${m.entity.code} — ${m.entity.name}` : null,
+      openedAt: m.openedAt,
+    };
+  });
+}
 
-// PATCH /api/matters/:id — change matter status (open / on hold / closed).
+// PATCH /api/matters/:id — update status and/or the litigation & summary details.
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
   return handle(async () => {
     const user = await requirePermission("matter:manage");
-    const { status } = patchSchema.parse(await req.json());
+    const input = updateMatterSchema.parse(await req.json());
     const matter = await prisma.matter.findFirst({
       where: { id: params.id, companyId: user.companyId },
     });
     if (!matter) throw new AuthError(404, "not_found");
+    await assertMainLawyer(user.companyId, input.mainLawyerId || undefined);
 
-    const updated = await prisma.matter.update({
-      where: { id: matter.id },
-      data: { status },
-    });
+    const data: Record<string, unknown> = { ...matterDetailData(input) };
+    if (input.status !== undefined) data.status = input.status;
+    if (input.name !== undefined) data.name = input.name;
+    if (input.practiceAreaId !== undefined) data.practiceAreaId = input.practiceAreaId || null;
+    if (input.responsiblePartnerId !== undefined) data.responsiblePartnerId = input.responsiblePartnerId || null;
+
+    const updated = await prisma.matter.update({ where: { id: matter.id }, data });
     await writeAudit({
       companyId: user.companyId,
       actorId: user.id,
-      action: "MATTER_STATUS_CHANGED",
+      action: input.status && input.status !== matter.status ? "MATTER_STATUS_CHANGED" : "MATTER_UPDATED",
       entityType: "Matter",
       entityId: matter.id,
       before: { status: matter.status },

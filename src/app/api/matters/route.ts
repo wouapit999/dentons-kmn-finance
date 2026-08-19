@@ -9,6 +9,7 @@ import { handle } from "@/lib/api";
 import { prisma } from "@/lib/prisma";
 import { requirePermission, AuthError } from "@/lib/auth";
 import { createMatterSchema } from "@/lib/validation";
+import { matterDetailData, assertMainLawyer } from "@/lib/matters";
 import { writeAudit } from "@/lib/audit";
 
 export const dynamic = "force-dynamic";
@@ -53,6 +54,7 @@ export async function POST(req: NextRequest) {
     if (!client) throw new AuthError(422, "invalid_client");
     if (client.kycStatus !== "VERIFIED") throw new AuthError(422, "client_kyc_not_verified");
     if (client.conflictStatus === "BLOCKED") throw new AuthError(422, "client_conflict_blocked");
+    await assertMainLawyer(user.companyId, input.mainLawyerId || undefined);
 
     // If the caller supplied a code it must be free; otherwise the server
     // assigns the next one. Codes are unique per company.
@@ -85,6 +87,7 @@ export async function POST(req: NextRequest) {
       responsiblePartnerId: input.responsiblePartnerId || null,
       currency: input.currency,
       createdById: user.id,
+      ...matterDetailData(input),
     };
 
     // Retry on the unique constraint in case two matters are opened at once.

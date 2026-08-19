@@ -97,6 +97,20 @@ export const updateClientSchema = z.object({
 });
 export type UpdateClientInput = z.infer<typeof updateClientSchema>;
 
+// Litigation / summary detail fields shared by create and update.
+const matterDetailFields = {
+  nature: z.string().max(400).optional().or(z.literal("")),
+  adversary: z.string().max(200).optional().or(z.literal("")),
+  mainLawyerId: z.string().uuid().optional().or(z.literal("")),
+  courtType: z
+    .enum(["COURT_OF_FIRST_INSTANCE", "HIGH_COURT", "COURT_OF_APPEAL"])
+    .optional()
+    .or(z.literal("")),
+  courtLocation: z.string().max(120).optional().or(z.literal("")),
+  audienceAt: z.string().optional().or(z.literal("")), // datetime-local; parsed server-side
+  notes: z.string().max(4000).optional().or(z.literal("")),
+};
+
 export const createMatterSchema = z.object({
   clientId: z.string().uuid(),
   // Optional: the server assigns the next free M-YYYY-NNNNN when omitted.
@@ -105,8 +119,18 @@ export const createMatterSchema = z.object({
   practiceAreaId: z.string().uuid().optional().or(z.literal("")),
   responsiblePartnerId: z.string().uuid().optional().or(z.literal("")),
   currency: z.string().length(3).default("XAF"),
+  ...matterDetailFields,
 });
 export type CreateMatterInput = z.infer<typeof createMatterSchema>;
+
+export const updateMatterSchema = z.object({
+  status: z.enum(["OPEN", "ON_HOLD", "CLOSED"]).optional(),
+  name: z.string().min(2).max(160).optional(),
+  practiceAreaId: z.string().uuid().optional().or(z.literal("")),
+  responsiblePartnerId: z.string().uuid().optional().or(z.literal("")),
+  ...matterDetailFields,
+});
+export type UpdateMatterInput = z.infer<typeof updateMatterSchema>;
 
 // --- Time & Disbursements ---
 

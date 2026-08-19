@@ -123,6 +123,14 @@ const columns = [
   // generated number (DROP NOT NULL is not a destructive drop — no data lost).
   `ALTER TABLE "Employee" ADD COLUMN IF NOT EXISTS "employeeType" TEXT NOT NULL DEFAULT 'EMPLOYEE'`,
   `ALTER TABLE "Employee" ALTER COLUMN "employeeNo" DROP NOT NULL`,
+  // Matter litigation & summary details.
+  `ALTER TABLE "Matter" ADD COLUMN IF NOT EXISTS "nature" TEXT`,
+  `ALTER TABLE "Matter" ADD COLUMN IF NOT EXISTS "adversary" TEXT`,
+  `ALTER TABLE "Matter" ADD COLUMN IF NOT EXISTS "mainLawyerId" TEXT`,
+  `ALTER TABLE "Matter" ADD COLUMN IF NOT EXISTS "courtType" TEXT`,
+  `ALTER TABLE "Matter" ADD COLUMN IF NOT EXISTS "courtLocation" TEXT`,
+  `ALTER TABLE "Matter" ADD COLUMN IF NOT EXISTS "audienceAt" ${TS}`,
+  `ALTER TABLE "Matter" ADD COLUMN IF NOT EXISTS "notes" TEXT`,
 ];
 
 // --- indexes & uniques ----------------------------------------------------
@@ -162,6 +170,7 @@ const foreignKeys = [
   fk("ProformaComment", "ProformaComment_proformaId_fkey", "proformaId", "Proforma", "CASCADE"),
   fk("Matter", "Matter_officeId_fkey", "officeId", "Office", "SET NULL"),
   fk("Matter", "Matter_entityId_fkey", "entityId", "LegalEntity", "SET NULL"),
+  fk("Matter", "Matter_mainLawyerId_fkey", "mainLawyerId", "Employee", "SET NULL"),
 ];
 
 const prisma = new PrismaClient();
