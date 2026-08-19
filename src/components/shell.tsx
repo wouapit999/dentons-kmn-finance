@@ -97,6 +97,7 @@ export function Shell({ children, user }: ShellProps) {
     { href: "/assistant", label: "nav.assistant", icon: <Bot size={18} />, perm: "report:read" },
     { href: "/users", label: "nav.users", icon: <Users size={18} />, perm: "user:read" },
     { href: "/admin/security", label: "nav.pwadmin", icon: <KeyRound size={18} />, perm: "security:admin" },
+    { href: "/admin/ai", label: "nav.aiSettings", icon: <Sparkles size={18} />, perm: "user:manage" },
     { href: "/roles", label: "nav.roles", icon: <ShieldCheck size={18} />, perm: "role:read" },
     { href: "/audit", label: "nav.audit", icon: <ScrollText size={18} />, perm: "audit:read" },
     { href: "/security", label: "nav.security", icon: <ShieldAlert size={18} /> }, // all users
