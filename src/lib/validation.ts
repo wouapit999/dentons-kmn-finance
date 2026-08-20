@@ -522,7 +522,9 @@ export const legalTemplateSchema = z.object({
 export type LegalTemplateInput = z.infer<typeof legalTemplateSchema>;
 
 export const generateTemplateSchema = z.object({
-  templateId: z.string().uuid(),
+  // Not .uuid(): seeded starter templates use fixed non-UUID ids; the lookup is
+  // company-scoped so any id string is safe.
+  templateId: z.string().min(8).max(64),
   clientId: z.string().uuid().optional().or(z.literal("")),
   matterId: z.string().uuid().optional().or(z.literal("")),
   // Free-form extra placeholder values typed by the user ({{extra.<key>}}).
