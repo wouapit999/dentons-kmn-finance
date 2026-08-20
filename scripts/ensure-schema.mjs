@@ -112,6 +112,35 @@ const tables = [
      "createdAt" ${TS} NOT NULL DEFAULT CURRENT_TIMESTAMP,
      CONSTRAINT "ProformaComment_pkey" PRIMARY KEY ("id")
    )`,
+  `CREATE TABLE IF NOT EXISTS "LegalTemplate" (
+     "id" TEXT NOT NULL,
+     "companyId" TEXT NOT NULL,
+     "name" TEXT NOT NULL,
+     "category" TEXT NOT NULL DEFAULT 'GENERAL',
+     "language" TEXT NOT NULL DEFAULT 'en',
+     "body" TEXT NOT NULL,
+     "updatedBy" TEXT,
+     "createdAt" ${TS} NOT NULL DEFAULT CURRENT_TIMESTAMP,
+     "updatedAt" ${TS} NOT NULL DEFAULT CURRENT_TIMESTAMP,
+     CONSTRAINT "LegalTemplate_pkey" PRIMARY KEY ("id")
+   )`,
+  `CREATE TABLE IF NOT EXISTS "SignatureRequest" (
+     "id" TEXT NOT NULL,
+     "companyId" TEXT NOT NULL,
+     "clientId" TEXT,
+     "documentId" TEXT,
+     "provider" TEXT NOT NULL DEFAULT 'DROPBOX_SIGN',
+     "providerRef" TEXT,
+     "title" TEXT NOT NULL,
+     "signerName" TEXT NOT NULL,
+     "signerEmail" TEXT NOT NULL,
+     "status" TEXT NOT NULL DEFAULT 'SENT',
+     "detail" TEXT,
+     "sentById" TEXT,
+     "sentAt" ${TS} NOT NULL DEFAULT CURRENT_TIMESTAMP,
+     "completedAt" ${TS},
+     CONSTRAINT "SignatureRequest_pkey" PRIMARY KEY ("id")
+   )`,
 ];
 
 // --- new columns on existing tables (additive) -----------------------------
@@ -131,6 +160,13 @@ const columns = [
   `ALTER TABLE "Matter" ADD COLUMN IF NOT EXISTS "courtLocation" TEXT`,
   `ALTER TABLE "Matter" ADD COLUMN IF NOT EXISTS "audienceAt" ${TS}`,
   `ALTER TABLE "Matter" ADD COLUMN IF NOT EXISTS "notes" TEXT`,
+  // Document links (OneDrive/SharePoint/DMS) + OCR full-text search.
+  `ALTER TABLE "ClientDocument" ADD COLUMN IF NOT EXISTS "storage" TEXT NOT NULL DEFAULT 'INTERNAL'`,
+  `ALTER TABLE "ClientDocument" ADD COLUMN IF NOT EXISTS "url" TEXT`,
+  `ALTER TABLE "ClientDocument" ADD COLUMN IF NOT EXISTS "source" TEXT`,
+  `ALTER TABLE "ClientDocument" ADD COLUMN IF NOT EXISTS "ocrText" TEXT`,
+  `ALTER TABLE "ClientDocument" ADD COLUMN IF NOT EXISTS "ocrAt" ${TS}`,
+  `ALTER TABLE "ClientDocument" ALTER COLUMN "data" DROP NOT NULL`,
 ];
 
 // --- indexes & uniques ----------------------------------------------------
@@ -146,6 +182,9 @@ const indexes = [
   `CREATE INDEX IF NOT EXISTS "Proforma_matterId_idx" ON "Proforma"("matterId")`,
   `CREATE INDEX IF NOT EXISTS "ProformaLine_proformaId_idx" ON "ProformaLine"("proformaId")`,
   `CREATE INDEX IF NOT EXISTS "ProformaComment_proformaId_idx" ON "ProformaComment"("proformaId")`,
+  `CREATE INDEX IF NOT EXISTS "LegalTemplate_companyId_idx" ON "LegalTemplate"("companyId")`,
+  `CREATE INDEX IF NOT EXISTS "SignatureRequest_companyId_idx" ON "SignatureRequest"("companyId")`,
+  `CREATE INDEX IF NOT EXISTS "SignatureRequest_documentId_idx" ON "SignatureRequest"("documentId")`,
 ];
 
 // --- foreign keys (guarded; integrity only, never fatal) -------------------
@@ -171,6 +210,8 @@ const foreignKeys = [
   fk("Matter", "Matter_officeId_fkey", "officeId", "Office", "SET NULL"),
   fk("Matter", "Matter_entityId_fkey", "entityId", "LegalEntity", "SET NULL"),
   fk("Matter", "Matter_mainLawyerId_fkey", "mainLawyerId", "Employee", "SET NULL"),
+  fk("LegalTemplate", "LegalTemplate_companyId_fkey", "companyId", "Company"),
+  fk("SignatureRequest", "SignatureRequest_companyId_fkey", "companyId", "Company"),
 ];
 
 const prisma = new PrismaClient();

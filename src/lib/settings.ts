@@ -16,6 +16,16 @@ export const SETTING_KEYS = {
   aiModel: "ai.model", // plain
   geminiApiKey: "ai.gemini_api_key", // encrypted — used for KYC internet screening
   geminiModel: "ai.gemini_model", // plain
+  // Microsoft 365 (Graph, client-credentials app registration)
+  m365TenantId: "m365.tenant_id",
+  m365ClientId: "m365.client_id",
+  m365ClientSecret: "m365.client_secret", // encrypted
+  m365SharepointHost: "m365.sharepoint_host", // e.g. contoso.sharepoint.com
+  m365SharepointSite: "m365.sharepoint_site", // site path, e.g. sites/Legal
+  // Teams incoming-webhook (no Azure app needed)
+  teamsWebhookUrl: "teams.webhook_url", // encrypted
+  // E-signature (Dropbox Sign)
+  esignApiKey: "esign.dropbox_key", // encrypted
 } as const;
 
 const ENC_PREFIX = "enc:v1:";
@@ -117,6 +127,39 @@ export async function resolveGeminiConfig(
   if (settingsKey) return { apiKey: settingsKey, model, source: "settings" };
   if (envKey) return { apiKey: envKey, model, source: "env" };
   return { apiKey: null, model, source: "none" };
+}
+
+export interface M365Config {
+  tenantId: string;
+  clientId: string;
+  clientSecret: string;
+  sharepointHost: string;
+  sharepointSite: string;
+}
+
+/** Resolve integration settings for a company (all optional; null = not connected). */
+export async function resolveIntegrations(companyId: string): Promise<{
+  m365: M365Config | null;
+  teamsWebhookUrl: string | null;
+  esignApiKey: string | null;
+}> {
+  const g = (k: string) => getSetting(companyId, k);
+  const [tenantId, clientId, clientSecret, spHost, spSite, teams, esign] = await Promise.all([
+    g(SETTING_KEYS.m365TenantId), g(SETTING_KEYS.m365ClientId), g(SETTING_KEYS.m365ClientSecret),
+    g(SETTING_KEYS.m365SharepointHost), g(SETTING_KEYS.m365SharepointSite),
+    g(SETTING_KEYS.teamsWebhookUrl), g(SETTING_KEYS.esignApiKey),
+  ]);
+  const m365 =
+    tenantId && clientId && clientSecret
+      ? {
+          tenantId: tenantId.trim(),
+          clientId: clientId.trim(),
+          clientSecret: clientSecret.trim(),
+          sharepointHost: (spHost ?? "").trim(),
+          sharepointSite: (spSite ?? "").trim(),
+        }
+      : null;
+  return { m365, teamsWebhookUrl: teams?.trim() || null, esignApiKey: esign?.trim() || null };
 }
 
 /** Mask a key for display: sk-ant-••••••••1234 */

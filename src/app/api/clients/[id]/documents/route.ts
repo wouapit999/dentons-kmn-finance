@@ -8,10 +8,10 @@ import { NextRequest } from "next/server";
 import { handle } from "@/lib/api";
 import { prisma } from "@/lib/prisma";
 import { requirePermission, AuthError } from "@/lib/auth";
-import { clientDocumentSchema } from "@/lib/validation";
+import { clientDocumentSchema, clientDocumentLinkSchema } from "@/lib/validation";
 import { writeAudit } from "@/lib/audit";
-import { docMetaScan } from "@/lib/ai";
-import { resolveAiConfig } from "@/lib/settings";
+import { docMetaScan, geminiExtractText } from "@/lib/ai";
+import { resolveAiConfig, resolveGeminiConfig } from "@/lib/settings";
 
 export const dynamic = "force-dynamic";
 
@@ -31,6 +31,7 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
       select: {
         id: true, kind: true, filename: true, mime: true,
         sizeBytes: true, notes: true, createdAt: true,
+        storage: true, url: true, source: true, ocrAt: true,
       },
     });
     return docs;
@@ -78,17 +79,52 @@ async function scanMetadata(
   return findings.length ? `Scan: ${Array.from(new Set(findings)).join(" · ")}` : null;
 }
 
-// POST /api/clients/:id/documents — upload a scan/reference (lawyers: client:manage).
+// POST /api/clients/:id/documents — attach a document (lawyers: client:manage).
+// Two modes: a real file upload ({...base64}) stored internally, or a LINK
+// ({link:{url,source,...}}) pointing at OneDrive / SharePoint / an external DMS.
+// Internal PDFs/images are OCR'd (Gemini, best-effort) for full-text search.
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   return handle(async () => {
     const user = await requirePermission("client:manage");
-    const input = clientDocumentSchema.parse(await req.json());
+    const raw = await req.json();
     const client = await prisma.client.findFirst({
       where: { id: params.id, companyId: user.companyId, deletedAt: null },
       select: { id: true, name: true },
     });
     if (!client) throw new AuthError(404, "not_found");
 
+    // ---- LINK mode ----
+    if (raw && typeof raw === "object" && "link" in raw) {
+      const input = clientDocumentLinkSchema.parse((raw as { link: unknown }).link);
+      const doc = await prisma.clientDocument.create({
+        data: {
+          companyId: user.companyId,
+          clientId: client.id,
+          kind: input.kind,
+          filename: input.filename,
+          mime: "text/uri-list",
+          sizeBytes: 0,
+          storage: "LINK",
+          url: input.url,
+          source: input.source,
+          data: null,
+          notes: input.notes || null,
+          uploadedBy: user.id,
+        },
+      });
+      await writeAudit({
+        companyId: user.companyId,
+        actorId: user.id,
+        action: "CLIENT_DOC_LINKED",
+        entityType: "Client",
+        entityId: client.id,
+        after: { filename: input.filename, source: input.source, url: input.url },
+      });
+      return { id: doc.id, storage: "LINK" };
+    }
+
+    // ---- FILE mode ----
+    const input = clientDocumentSchema.parse(raw);
     const sizeBytes = Math.floor(input.base64.length * 0.75);
     if (sizeBytes > 2 * 1024 * 1024) throw new AuthError(422, "file_too_large");
 
@@ -96,6 +132,21 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       user.companyId, client.name, input.filename, input.mime, input.base64,
     );
     const notes = [input.notes || null, scan].filter(Boolean).join(" — ") || null;
+
+    // OCR for search (PDF/images via Gemini; text files store their own text).
+    let ocrText: string | null = null;
+    if (input.mime.startsWith("text/")) {
+      ocrText = Buffer.from(input.base64, "base64").toString("utf8").slice(0, 100_000);
+    } else if (input.mime === "application/pdf" || input.mime.startsWith("image/")) {
+      const gem = await resolveGeminiConfig(user.companyId);
+      if (gem.apiKey) {
+        try {
+          ocrText = (await geminiExtractText(input.base64, input.mime, { apiKey: gem.apiKey, model: gem.model })).slice(0, 100_000) || null;
+        } catch (e) {
+          console.error("doc-ocr: extraction failed -", e instanceof Error ? e.message : e);
+        }
+      }
+    }
 
     const doc = await prisma.clientDocument.create({
       data: {
@@ -105,7 +156,10 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
         filename: input.filename,
         mime: input.mime,
         sizeBytes,
+        storage: "INTERNAL",
         data: input.base64,
+        ocrText,
+        ocrAt: ocrText ? new Date() : null,
         notes,
         uploadedBy: user.id,
       },
@@ -116,8 +170,8 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       action: "CLIENT_DOC_ADDED",
       entityType: "Client",
       entityId: client.id,
-      after: { kind: input.kind, filename: input.filename, sizeBytes, scan },
+      after: { kind: input.kind, filename: input.filename, sizeBytes, scan, ocr: !!ocrText },
     });
-    return { id: doc.id, scan };
+    return { id: doc.id, scan, ocr: !!ocrText };
   });
 }

@@ -18,6 +18,11 @@ export async function GET(_req: NextRequest, { params }: { params: { docId: stri
       where: { id: params.docId, companyId: user.companyId },
     });
     if (!doc) throw new AuthError(404, "not_found");
+    // LINK documents live on OneDrive/SharePoint/DMS — send the caller there.
+    if (doc.storage === "LINK" && doc.url) {
+      return NextResponse.redirect(doc.url, 302);
+    }
+    if (!doc.data) throw new AuthError(404, "no_content");
     return new NextResponse(Buffer.from(doc.data, "base64"), {
       headers: {
         "Content-Type": doc.mime,

@@ -170,6 +170,46 @@ export async function kycScreenGemini(
 }
 
 /**
+ * OCR text extraction via Gemini (free tier): pull the readable text out of a
+ * PDF or image so documents become full-text searchable. Best-effort — callers
+ * must treat failures as "no text", never block the upload.
+ */
+export async function geminiExtractText(
+  base64: string,
+  mime: string,
+  cfg: { apiKey: string; model: string },
+): Promise<string> {
+  const url =
+    `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(cfg.model)}:generateContent` +
+    `?key=${encodeURIComponent(cfg.apiKey)}`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      contents: [
+        {
+          role: "user",
+          parts: [
+            { inline_data: { mime_type: mime, data: base64 } },
+            {
+              text:
+                "Extract ALL readable text from this document verbatim (OCR). " +
+                "Keep the reading order; no commentary, no formatting markup — plain text only.",
+            },
+          ],
+        },
+      ],
+    }),
+  });
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    throw new Error(`gemini_ocr_${res.status}: ${body.slice(0, 200)}`);
+  }
+  const data = (await res.json()) as { candidates?: { content?: { parts?: { text?: string }[] } }[] };
+  return (data.candidates?.[0]?.content?.parts ?? []).map((p) => p.text ?? "").join("\n").trim();
+}
+
+/**
  * Lightweight document metadata scan for client intake: does the document
  * mention the client's name, and which matter/case references appear?
  * Uses the vision model for PDFs/images; the caller falls back to text

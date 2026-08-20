@@ -31,6 +31,7 @@ interface Portfolio {
 interface Doc {
   id: string; kind: string; filename: string; mime: string;
   sizeBytes: number; notes: string | null; createdAt: string;
+  storage?: string; url?: string | null; source?: string | null; ocrAt?: string | null;
 }
 
 const kycColor = (s: string) => (s === "VERIFIED" ? "green" : s === "REJECTED" ? "red" : "amber");
@@ -213,9 +214,14 @@ function DocumentsPanel({
   clientId, docs, canManage, onChanged,
 }: { clientId: string; docs: Doc[]; canManage: boolean; onChanged: () => void }) {
   const t = useT();
+  const [mode, setMode] = useState<"file" | "link">("file");
   const [kind, setKind] = useState("IDENTITY");
   const [notes, setNotes] = useState("");
+  const [linkUrl, setLinkUrl] = useState("");
+  const [linkName, setLinkName] = useState("");
+  const [linkSource, setLinkSource] = useState("ONEDRIVE");
   const [err, setErr] = useState<string | null>(null);
+  const [signDoc, setSignDoc] = useState<Doc | null>(null);
 
   const upload = useMutation({
     mutationFn: async (file: File) => {
@@ -239,33 +245,102 @@ function DocumentsPanel({
     onError: (e: Error) => setErr(e.message === "file_too_large" ? "Max 2 MB." : e.message),
   });
 
+  const attachLink = useMutation({
+    mutationFn: async () => {
+      const res = await fetch(`/api/clients/${clientId}/documents`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          link: {
+            kind: kind.endsWith("_REPORT") ? "OTHER" : kind,
+            filename: linkName || linkUrl.split("/").pop() || "Linked document",
+            url: linkUrl,
+            source: linkSource,
+            notes: notes || undefined,
+          },
+        }),
+      });
+      if (!res.ok) { const b = await res.json().catch(() => ({})); throw new Error(b.error || "failed"); }
+    },
+    onSuccess: () => { setErr(null); setNotes(""); setLinkUrl(""); setLinkName(""); onChanged(); },
+    onError: (e: Error) => setErr(e.message),
+  });
+
+  const sourceBadge = (s?: string | null) =>
+    s === "ONEDRIVE" ? "OneDrive" : s === "SHAREPOINT" ? "SharePoint" : s === "DMS" ? "DMS" : t("file.linked");
+
   return (
     <Card className="p-5">
       <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500">
         {t("file.docs")} ({docs.length})
       </h2>
       {canManage && (
-        <div className="mb-4 flex flex-wrap items-end gap-2">
-          <div>
-            <label className="mb-1 block text-xs font-medium">{t("file.kind")}</label>
-            <select
-              className="h-9 rounded-md border border-slate-300 bg-white px-2 text-sm dark:border-slate-700 dark:bg-slate-900"
-              value={kind} onChange={(e) => setKind(e.target.value)}
+        <div className="mb-4 space-y-2">
+          <div className="flex gap-1 text-xs">
+            <button
+              className={`rounded-md px-2.5 py-1 font-medium ${mode === "file" ? "bg-brand-50 text-brand-700 dark:bg-brand-900/40 dark:text-brand-100" : "text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"}`}
+              onClick={() => setMode("file")}
             >
-              {CLIENT_DOC_KINDS.filter((k) => !k.endsWith("_REPORT")).map((k) => (
-                <option key={k} value={k}>{k}</option>
-              ))}
-            </select>
+              {t("file.modeUpload")}
+            </button>
+            <button
+              className={`rounded-md px-2.5 py-1 font-medium ${mode === "link" ? "bg-brand-50 text-brand-700 dark:bg-brand-900/40 dark:text-brand-100" : "text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"}`}
+              onClick={() => setMode("link")}
+            >
+              {t("file.modeLink")}
+            </button>
           </div>
-          <div className="flex-1 min-w-[140px]">
-            <label className="mb-1 block text-xs font-medium">{t("file.notes")}</label>
-            <Input className="h-9" value={notes} onChange={(e) => setNotes(e.target.value)} />
+          <div className="flex flex-wrap items-end gap-2">
+            <div>
+              <label className="mb-1 block text-xs font-medium">{t("file.kind")}</label>
+              <select
+                className="h-9 rounded-md border border-slate-300 bg-white px-2 text-sm dark:border-slate-700 dark:bg-slate-900"
+                value={kind} onChange={(e) => setKind(e.target.value)}
+              >
+                {CLIENT_DOC_KINDS.filter((k) => !k.endsWith("_REPORT")).map((k) => (
+                  <option key={k} value={k}>{k}</option>
+                ))}
+              </select>
+            </div>
+            <div className="min-w-[140px] flex-1">
+              <label className="mb-1 block text-xs font-medium">{t("file.notes")}</label>
+              <Input className="h-9" value={notes} onChange={(e) => setNotes(e.target.value)} />
+            </div>
+            {mode === "file" ? (
+              <label className="inline-flex h-9 cursor-pointer items-center rounded-md bg-brand px-3 text-sm font-medium text-white hover:bg-brand-700">
+                {upload.isPending ? "…" : t("file.upload")}
+                <input type="file" className="hidden"
+                  onChange={(e) => { const f = e.target.files?.[0]; if (f) upload.mutate(f); }} />
+              </label>
+            ) : null}
           </div>
-          <label className="inline-flex h-9 cursor-pointer items-center rounded-md bg-brand px-3 text-sm font-medium text-white hover:bg-brand-700">
-            {upload.isPending ? "…" : t("file.upload")}
-            <input type="file" className="hidden"
-              onChange={(e) => { const f = e.target.files?.[0]; if (f) upload.mutate(f); }} />
-          </label>
+          {mode === "link" && (
+            <div className="flex flex-wrap items-end gap-2">
+              <div className="min-w-[220px] flex-[2]">
+                <label className="mb-1 block text-xs font-medium">{t("file.linkUrl")}</label>
+                <Input className="h-9" placeholder="https://…" value={linkUrl} onChange={(e) => setLinkUrl(e.target.value)} />
+              </div>
+              <div className="min-w-[140px] flex-1">
+                <label className="mb-1 block text-xs font-medium">{t("file.linkName")}</label>
+                <Input className="h-9" value={linkName} onChange={(e) => setLinkName(e.target.value)} />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium">{t("file.linkSource")}</label>
+                <select
+                  className="h-9 rounded-md border border-slate-300 bg-white px-2 text-sm dark:border-slate-700 dark:bg-slate-900"
+                  value={linkSource} onChange={(e) => setLinkSource(e.target.value)}
+                >
+                  <option value="ONEDRIVE">OneDrive</option>
+                  <option value="SHAREPOINT">SharePoint</option>
+                  <option value="DMS">DMS</option>
+                  <option value="OTHER">{t("file.linkOther")}</option>
+                </select>
+              </div>
+              <Button className="h-9" disabled={!linkUrl.startsWith("http") || attachLink.isPending} onClick={() => attachLink.mutate()}>
+                {t("file.attachLink")}
+              </Button>
+            </div>
+          )}
         </div>
       )}
       {err && <p className="mb-2 text-sm text-red-600">{err}</p>}
@@ -274,19 +349,96 @@ function DocumentsPanel({
         {docs.map((doc) => (
           <li key={doc.id} className="flex items-center justify-between gap-2">
             <span className="min-w-0">
-              <a className="text-brand hover:underline" href={`/api/clients/documents/${doc.id}`}>
+              <a
+                className="text-brand hover:underline"
+                href={doc.storage === "LINK" && doc.url ? doc.url : `/api/clients/documents/${doc.id}`}
+                target={doc.storage === "LINK" ? "_blank" : undefined}
+                rel={doc.storage === "LINK" ? "noopener noreferrer" : undefined}
+              >
                 {doc.filename}
               </a>
               {doc.notes && <span className="ml-2 truncate text-xs text-slate-400">{doc.notes}</span>}
             </span>
             <span className="flex shrink-0 items-center gap-2">
+              {doc.storage === "LINK" && <Badge color="amber">{sourceBadge(doc.source)}</Badge>}
               <Badge color={doc.kind.endsWith("_REPORT") ? "brand" : "slate"}>{doc.kind}</Badge>
-              <span className="text-xs text-slate-400">{Math.round(doc.sizeBytes / 1024)} KB</span>
+              {doc.storage !== "LINK" && (
+                <span className="text-xs text-slate-400">{Math.round(doc.sizeBytes / 1024)} KB</span>
+              )}
+              {canManage && doc.mime === "application/pdf" && doc.storage !== "LINK" && (
+                <Button size="sm" variant="outline" onClick={() => setSignDoc(doc)}>{t("esign.send")}</Button>
+              )}
             </span>
           </li>
         ))}
       </ul>
+      {signDoc && <EsignDialog doc={signDoc} onClose={() => setSignDoc(null)} />}
     </Card>
+  );
+}
+
+function EsignDialog({ doc, onClose }: { doc: Doc; onClose: () => void }) {
+  const t = useT();
+  const [signerName, setSignerName] = useState("");
+  const [signerEmail, setSignerEmail] = useState("");
+  const [subject, setSubject] = useState(doc.filename.replace(/\.pdf$/i, ""));
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [done, setDone] = useState(false);
+
+  const send = useMutation({
+    mutationFn: async () => {
+      const res = await fetch("/api/esign", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ documentId: doc.id, signerName, signerEmail, subject, message: message || undefined }),
+      });
+      const b = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(b.error || "failed");
+    },
+    onSuccess: () => setDone(true),
+    onError: (e: Error) => setError(e.message === "esign_not_configured" ? t("esign.notConfigured") : e.message),
+  });
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+      <Card className="w-full max-w-md p-6">
+        <h2 className="mb-1 text-lg font-semibold">{t("esign.send")}</h2>
+        <p className="mb-4 text-sm text-slate-500">{doc.filename}</p>
+        {done ? (
+          <>
+            <p className="text-sm text-green-600">{t("esign.sent")}</p>
+            <div className="mt-4 flex justify-end"><Button onClick={onClose}>{t("common.cancel")}</Button></div>
+          </>
+        ) : (
+          <div className="space-y-3">
+            <div>
+              <label className="mb-1 block text-xs font-medium">{t("esign.signerName")}</label>
+              <Input value={signerName} onChange={(e) => setSignerName(e.target.value)} />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium">{t("esign.signerEmail")}</label>
+              <Input type="email" value={signerEmail} onChange={(e) => setSignerEmail(e.target.value)} />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium">{t("esign.subject")}</label>
+              <Input value={subject} onChange={(e) => setSubject(e.target.value)} />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium">{t("esign.message")}</label>
+              <Input value={message} onChange={(e) => setMessage(e.target.value)} />
+            </div>
+            {error && <p className="text-sm text-red-600">{error}</p>}
+            <div className="flex justify-end gap-2 pt-1">
+              <Button variant="outline" onClick={onClose}>{t("common.cancel")}</Button>
+              <Button disabled={!signerName || !signerEmail.includes("@") || !subject || send.isPending} onClick={() => send.mutate()}>
+                {send.isPending ? "…" : t("esign.sendNow")}
+              </Button>
+            </div>
+          </div>
+        )}
+      </Card>
+    </div>
   );
 }
 

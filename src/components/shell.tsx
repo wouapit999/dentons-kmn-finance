@@ -43,6 +43,9 @@ import {
   Menu,
   X,
   DatabaseBackup,
+  FileSearch,
+  FileStack,
+  Plug,
 } from "lucide-react";
 import { useT } from "@/lib/useT";
 import { useUi } from "@/lib/store";
@@ -82,6 +85,8 @@ export function Shell({ children, user }: ShellProps) {
     { href: "/tasks", label: "nav.tasks", icon: <ListTodo size={18} /> }, // all users
     { href: "/clients", label: "nav.clients", icon: <Briefcase size={18} />, perm: "client:read" },
     { href: "/matters", label: "nav.matters", icon: <FolderKanban size={18} />, perm: "matter:read" },
+    { href: "/documents", label: "nav.documents", icon: <FileSearch size={18} />, perm: "client:read" },
+    { href: "/templates", label: "nav.templates", icon: <FileStack size={18} />, perm: "client:read" },
     { href: "/time", label: "nav.time", icon: <Clock size={18} />, perm: "time:read" },
     { href: "/disbursements", label: "nav.disbursements", icon: <Receipt size={18} />, perm: "disbursement:read" },
     { href: "/proformas", label: "nav.proformas", icon: <FileText size={18} />, perm: "proforma:read" },
@@ -107,6 +112,7 @@ export function Shell({ children, user }: ShellProps) {
     { href: "/users", label: "nav.users", icon: <Users size={18} />, perm: "user:read" },
     { href: "/admin/security", label: "nav.pwadmin", icon: <KeyRound size={18} />, perm: "security:admin" },
     { href: "/admin/ai", label: "nav.aiSettings", icon: <Sparkles size={18} />, perm: "user:manage" },
+    { href: "/admin/integrations", label: "nav.integrations", icon: <Plug size={18} />, perm: "user:manage" },
     { href: "/admin/reset", label: "nav.reset", icon: <DatabaseBackup size={18} />, perm: "system:reset" },
     { href: "/roles", label: "nav.roles", icon: <ShieldCheck size={18} />, perm: "role:read" },
     { href: "/audit", label: "nav.audit", icon: <ScrollText size={18} />, perm: "audit:read" },

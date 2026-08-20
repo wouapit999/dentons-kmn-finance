@@ -424,6 +424,77 @@ async function main() {
   });
   console.log(`Tasks seeded: ${TASK_CATEGORIES.length} categories, 3 tasks, 1 recurring rule.`);
 
+  // 11) Starter legal templates (idempotent; users edit or replace them in-app).
+  const templateSeed = [
+    {
+      id: "00000000-0000-0000-0000-0000000tpl01",
+      name: "Engagement Letter",
+      category: "ENGAGEMENT",
+      language: "en",
+      body: [
+        "# Engagement Letter",
+        "",
+        "{{date}}",
+        "",
+        "**{{client.name}}**",
+        "{{client.address}}",
+        "",
+        "Dear {{client.name}},",
+        "",
+        "We are pleased to confirm that {{firm.name}} will act for you in the matter",
+        "**{{matter.name}}** (our reference {{matter.code}}). The nature of the engagement is:",
+        "{{matter.nature}}.",
+        "",
+        "The lawyer with primary responsibility for your matter is {{matter.lawyer}}.",
+        "Our fees will be billed at the rates communicated to you, plus applicable taxes",
+        "and disbursements.",
+        "",
+        "Please sign and return a copy of this letter to confirm your instructions.",
+        "",
+        "Yours faithfully,",
+        "",
+        "{{user.name}}",
+        "{{firm.name}}",
+      ].join("\n"),
+    },
+    {
+      id: "00000000-0000-0000-0000-0000000tpl02",
+      name: "Mise en demeure",
+      category: "DEMAND",
+      language: "fr",
+      body: [
+        "# Mise en demeure",
+        "",
+        "{{date}}",
+        "",
+        "**{{matter.adversary}}**",
+        "",
+        "Objet : Mise en demeure — dossier {{matter.code}}",
+        "",
+        "Madame, Monsieur,",
+        "",
+        "Agissant au nom et pour le compte de notre client, **{{client.name}}**, nous vous",
+        "mettons en demeure de régulariser la situation relative à : {{matter.nature}}.",
+        "",
+        "À défaut de règlement sous huitaine à compter de la réception de la présente,",
+        "nous saisirons la juridiction compétente ({{matter.court}}) sans autre préavis.",
+        "",
+        "Veuillez agréer, Madame, Monsieur, l'expression de nos salutations distinguées.",
+        "",
+        "{{user.name}}",
+        "{{firm.name}}",
+      ].join("\n"),
+    },
+  ];
+  for (const tpl of templateSeed) {
+    await prisma.legalTemplate.upsert({
+      where: { id: tpl.id },
+      update: {},
+      create: { ...tpl, companyId: company.id, updatedBy: admin.id },
+    });
+  }
+  console.log(`Legal templates seeded: ${templateSeed.length}.`);
+
   console.log("\nSeed complete. Sign in with:");
   console.log("  IT Admin : admin@dentonskmn.local / ChangeMe123!");
   console.log("  CFO      : cfo@dentonskmn.local   / ChangeMe123!");

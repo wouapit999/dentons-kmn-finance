@@ -66,6 +66,8 @@ model Company {
   legalEntities    LegalEntity[]
   exchangeRates    ExchangeRate[]
   proformas        Proforma[]
+  legalTemplates    LegalTemplate[]
+  signatureRequests SignatureRequest[]
 }
 
 model Office {
@@ -452,7 +454,15 @@ model ClientDocument {
   filename   String
   mime       String
   sizeBytes  Int
-  data       String
+  // INTERNAL docs store base64 bytes in `data`; LINK docs store only `url`
+  // pointing at OneDrive / SharePoint / an external DMS.
+  storage    String   @default("INTERNAL") // INTERNAL | LINK
+  url        String?
+  source     String?  // ONEDRIVE | SHAREPOINT | DMS | OTHER (for LINK docs)
+  data       String?
+  // OCR-extracted text for full-text document search (Gemini, best-effort).
+  ocrText    String?
+  ocrAt      DateTime?
   notes      String?
   uploadedBy String
   createdAt  DateTime @default(now())
@@ -1389,4 +1399,47 @@ model ProformaComment {
   proforma Proforma @relation(fields: [proformaId], references: [id], onDelete: Cascade)
 
   @@index([proformaId])
+}
+
+// ---------------------------------------------------------------------------
+// Legal templates & e-signature (Module: DMS integrations)
+// ---------------------------------------------------------------------------
+
+model LegalTemplate {
+  id        String   @id @default(uuid())
+  companyId String
+  name      String
+  category  String   @default("GENERAL") // ENGAGEMENT | NDA | POA | DEMAND | CONTRACT | GENERAL
+  language  String   @default("en") // en | fr
+  // Body with {{placeholders}} such as {{client.name}}, {{matter.code}}, {{date}}.
+  body      String
+  updatedBy String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  company Company @relation(fields: [companyId], references: [id])
+
+  @@index([companyId])
+}
+
+model SignatureRequest {
+  id          String    @id @default(uuid())
+  companyId   String
+  clientId    String?
+  documentId  String?   // ClientDocument being signed (INTERNAL pdf)
+  provider    String    @default("DROPBOX_SIGN")
+  providerRef String?   // provider-side signature_request_id
+  title       String
+  signerName  String
+  signerEmail String
+  status      String    @default("SENT") // SENT | VIEWED | SIGNED | DECLINED | ERROR
+  detail      String?
+  sentById    String?
+  sentAt      DateTime  @default(now())
+  completedAt DateTime?
+
+  company Company @relation(fields: [companyId], references: [id])
+
+  @@index([companyId])
+  @@index([documentId])
 }

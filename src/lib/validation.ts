@@ -500,6 +500,61 @@ export const clientDocumentSchema = z.object({
 });
 export type ClientDocumentInput = z.infer<typeof clientDocumentSchema>;
 
+// A document can instead be a LINK to where the file lives (OneDrive,
+// SharePoint or an external DMS) — no bytes stored, just the URL.
+export const clientDocumentLinkSchema = z.object({
+  kind: z.enum(["IDENTITY", "REFERENCE", "CONTRACT", "OTHER"]),
+  filename: z.string().min(1).max(200),
+  url: z.string().url().max(2000),
+  source: z.enum(["ONEDRIVE", "SHAREPOINT", "DMS", "OTHER"]).default("OTHER"),
+  notes: z.string().max(500).optional().or(z.literal("")),
+});
+export type ClientDocumentLinkInput = z.infer<typeof clientDocumentLinkSchema>;
+
+// --- Legal templates ---
+
+export const legalTemplateSchema = z.object({
+  name: z.string().min(2).max(160),
+  category: z.enum(["ENGAGEMENT", "NDA", "POA", "DEMAND", "CONTRACT", "GENERAL"]).default("GENERAL"),
+  language: z.enum(["en", "fr"]).default("en"),
+  body: z.string().min(10).max(100_000),
+});
+export type LegalTemplateInput = z.infer<typeof legalTemplateSchema>;
+
+export const generateTemplateSchema = z.object({
+  templateId: z.string().uuid(),
+  clientId: z.string().uuid().optional().or(z.literal("")),
+  matterId: z.string().uuid().optional().or(z.literal("")),
+  // Free-form extra placeholder values typed by the user ({{extra.<key>}}).
+  extra: z.record(z.string().max(500)).optional(),
+  saveToClientFile: z.boolean().default(false),
+});
+export type GenerateTemplateInput = z.infer<typeof generateTemplateSchema>;
+
+// --- E-signature ---
+
+export const esignSendSchema = z.object({
+  documentId: z.string().uuid(),
+  signerName: z.string().min(2).max(120),
+  signerEmail: z.string().email(),
+  subject: z.string().min(2).max(200),
+  message: z.string().max(1000).optional().or(z.literal("")),
+});
+export type EsignSendInput = z.infer<typeof esignSendSchema>;
+
+// --- Integrations settings (IT Admin) ---
+
+export const integrationsSchema = z.object({
+  m365TenantId: z.string().max(100).optional(),
+  m365ClientId: z.string().max(100).optional(),
+  m365ClientSecret: z.string().max(200).optional(),
+  m365SharepointHost: z.string().max(200).optional(),
+  m365SharepointSite: z.string().max(200).optional(),
+  teamsWebhookUrl: z.string().max(1000).optional(),
+  esignApiKey: z.string().max(200).optional(),
+});
+export type IntegrationsInput = z.infer<typeof integrationsSchema>;
+
 // --- Module 17: Time Management & Tracking ---
 
 export const startTimerSchema = z.object({
