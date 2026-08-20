@@ -16,6 +16,9 @@ interface ResetResult {
   scope: "operational" | "org";
   counts: Record<string, number>;
   total: number;
+  sharedCounts: Record<string, number>;
+  sharedErrors: Record<string, string>;
+  sharedTotal: number;
   email: { to: string; sent: boolean; reason?: string; configured: boolean };
   backup: Record<string, unknown[]>;
   backupAt: string;
@@ -115,6 +118,16 @@ function ResetCard({
               <div key={k} className="flex justify-between"><span className="text-slate-500">{k}</span><span className="font-medium">{v}</span></div>
             ))}
           </div>
+          {Object.keys(result.sharedCounts).length > 0 && (
+            <div className="mt-3 border-t border-slate-200 pt-2 dark:border-slate-700">
+              <div className="mb-1 text-xs font-medium text-slate-500">{t("reset.sharedCleared")} ({result.sharedTotal})</div>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-0.5 text-xs sm:grid-cols-3">
+                {Object.entries(result.sharedCounts).map(([k, v]) => (
+                  <div key={k} className="flex justify-between"><span className="text-slate-500">{k}</span><span className="font-medium">{v}</span></div>
+                ))}
+              </div>
+            </div>
+          )}
           <div className="mt-3 border-t border-slate-200 pt-2 text-xs dark:border-slate-700">
             {result.email.sent
               ? <span className="text-green-600">{t("reset.emailSent")} {result.email.to}</span>
@@ -148,14 +161,14 @@ export default function AdminResetPage() {
           scope="operational"
           title={t("reset.opTitle")}
           danger={t("reset.opDanger")}
-          bullets={[t("reset.opBullet1"), t("reset.opBullet2"), t("reset.opBullet3")]}
+          bullets={[t("reset.opBullet1"), t("reset.opBullet2"), t("reset.opBullet4"), t("reset.opBullet3")]}
           buttonLabel={t("reset.opButton")}
         />
         <ResetCard
           scope="org"
           title={t("reset.orgTitle")}
           danger={t("reset.orgDanger")}
-          bullets={[t("reset.orgBullet1"), t("reset.orgBullet2"), t("reset.orgBullet3")]}
+          bullets={[t("reset.orgBullet1"), t("reset.orgBullet4"), t("reset.orgBullet2"), t("reset.orgBullet3")]}
           buttonLabel={t("reset.orgButton")}
         />
       </div>

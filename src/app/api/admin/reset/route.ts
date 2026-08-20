@@ -11,6 +11,7 @@ import { prisma } from "@/lib/prisma";
 import { requirePermission, AuthError } from "@/lib/auth";
 import { writeAudit } from "@/lib/audit";
 import { sendEmail, emailConfigured } from "@/lib/email";
+import { SHARED_TABLES, backupSharedTables, clearSharedTables } from "@/lib/reset-shared";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -37,6 +38,9 @@ export async function POST(req: NextRequest) {
     const companyId = user.companyId;
     const counts: Record<string, number> = {};
     const backup: Record<string, unknown[]> = {};
+    // Cross-app: sibling tables (onboarding/HR/screening) in the shared database.
+    let sharedCounts: Record<string, number> = {};
+    let sharedErrors: Record<string, string> = {};
 
     if (scope === "operational") {
       // ---- Back up every affected table (company-scoped) ----
@@ -110,6 +114,14 @@ export async function POST(req: NextRequest) {
         del((await tx.matter.deleteMany({ where: { companyId } })).count, "matters");
         del((await tx.client.deleteMany({ where: { companyId } })).count, "clients");
       }, { timeout: 30000 });
+
+      // Cross-app: back up then clear onboarding + screening data in the shared DB.
+      backup._shared_onboarding_screening = [
+        await backupSharedTables(SHARED_TABLES.operational),
+      ];
+      const shared = await clearSharedTables(SHARED_TABLES.operational);
+      sharedCounts = shared.counts;
+      sharedErrors = shared.errors;
     } else {
       // ---- ORG reset: archive users & employees (soft), keep the acting admin.
       // A hard delete would break append-only audit history (AuditLog.actor) and
@@ -139,6 +151,12 @@ export async function POST(req: NextRequest) {
         });
         counts.employeesArchived = e.count;
       }, { timeout: 30000 });
+
+      // Cross-app: back up then clear the HR platform's operational records.
+      backup._shared_hr = [await backupSharedTables(SHARED_TABLES.org)];
+      const shared = await clearSharedTables(SHARED_TABLES.org);
+      sharedCounts = shared.counts;
+      sharedErrors = shared.errors;
     }
 
     // ---- Audit ----
@@ -148,7 +166,7 @@ export async function POST(req: NextRequest) {
       action: scope === "operational" ? "DB_RESET_OPERATIONAL" : "DB_RESET_ORG",
       entityType: "Company",
       entityId: companyId,
-      after: { scope, counts },
+      after: { scope, counts, sharedCounts, sharedErrors },
     });
 
     // ---- In-app notification to the actor ----
@@ -164,7 +182,9 @@ export async function POST(req: NextRequest) {
 
     // ---- Completion email to support ----
     const total = Object.values(counts).reduce((s, n) => s + n, 0);
+    const sharedTotal = Object.values(sharedCounts).reduce((s, n) => s + n, 0);
     const lines = Object.entries(counts).map(([k, v]) => `  - ${k}: ${v}`).join("\n");
+    const sharedLines = Object.entries(sharedCounts).map(([k, v]) => `  - ${k}: ${v}`).join("\n") || "  (none)";
     const emailRes = await sendEmail({
       to: SUPPORT_EMAIL,
       subject: `[Dentons KMN ERP] Database reset (${scope}) completed`,
@@ -172,9 +192,11 @@ export async function POST(req: NextRequest) {
         `A database reset was performed on the Dentons KMN ERP.\n\n` +
         `Scope: ${scope === "operational" ? "Clients, Matters & Financial data (permanent delete)" : "Users & Employees (archived / deactivated)"}\n` +
         `Performed by: ${user.fullName} <${user.email}>\n` +
-        `When: ${new Date().toISOString()}\n` +
-        `Records affected (total ${total}):\n${lines}\n\n` +
-        `A JSON backup of the affected records was generated and downloaded by the operator at reset time.\n`,
+        `When: ${new Date().toISOString()}\n\n` +
+        `Finance records affected (total ${total}):\n${lines}\n\n` +
+        `Shared sibling-app records cleared (${scope === "operational" ? "onboarding & screening" : "HR"}, total ${sharedTotal}):\n${sharedLines}\n\n` +
+        (Object.keys(sharedErrors).length ? `Shared-table errors: ${JSON.stringify(sharedErrors)}\n\n` : "") +
+        `A JSON backup of all affected records (finance + shared) was generated and downloaded by the operator at reset time.\n`,
     });
 
     return {
@@ -182,6 +204,9 @@ export async function POST(req: NextRequest) {
       scope,
       counts,
       total,
+      sharedCounts,
+      sharedErrors,
+      sharedTotal,
       email: { to: SUPPORT_EMAIL, sent: emailRes.sent, reason: emailRes.reason, configured: emailConfigured() },
       backup, // returned so the client saves it as the pre-delete "archive"
       backupAt: new Date().toISOString(),
