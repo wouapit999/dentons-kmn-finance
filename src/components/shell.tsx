@@ -42,6 +42,7 @@ import {
   Sun,
   Menu,
   X,
+  DatabaseBackup,
 } from "lucide-react";
 import { useT } from "@/lib/useT";
 import { useUi } from "@/lib/store";
@@ -106,6 +107,7 @@ export function Shell({ children, user }: ShellProps) {
     { href: "/users", label: "nav.users", icon: <Users size={18} />, perm: "user:read" },
     { href: "/admin/security", label: "nav.pwadmin", icon: <KeyRound size={18} />, perm: "security:admin" },
     { href: "/admin/ai", label: "nav.aiSettings", icon: <Sparkles size={18} />, perm: "user:manage" },
+    { href: "/admin/reset", label: "nav.reset", icon: <DatabaseBackup size={18} />, perm: "system:reset" },
     { href: "/roles", label: "nav.roles", icon: <ShieldCheck size={18} />, perm: "role:read" },
     { href: "/audit", label: "nav.audit", icon: <ScrollText size={18} />, perm: "audit:read" },
     { href: "/security", label: "nav.security", icon: <ShieldAlert size={18} /> }, // all users

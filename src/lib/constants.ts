@@ -109,6 +109,7 @@ export const PERMISSIONS = {
   "role:manage": "Create/edit roles and assign permissions",
   "security:admin": "Manage password policy, lock accounts, reset MFA",
   "audit:read": "View the audit log",
+  "system:reset": "Clean/reset the company database (IT Administrator)",
 
   // General Ledger
   "gl:read": "View the general ledger",
@@ -328,6 +329,8 @@ export const SYSTEM_ROLES: {
       "role:manage", "security:admin", "task:admin", "audit:read",
       // HR employee administration (edit/delete employee records + salary).
       "payroll:read", "payroll:manage", "payroll:compensation",
+      // Destructive database reset (clean the tenant to a fresh state).
+      "system:reset",
     ],
   },
   {
